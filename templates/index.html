@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lung InfoCell - Assistência Técnica & Tecnologia</title>
+
+    <!-- Ícones FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Ficheiro CSS Externo carregado pelo Flask -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <!-- Header / Navbar -->
+    <header>
+        <div class="logo">
+            <i class="fa-solid fa-microchip"></i>
+            <div>Lung <span>InfoCell</span></div>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="#inicio">Início</a></li>
+                <li><a href="#servicos">Serviços</a></li>
+                <li><a href="#orcamento">Orçamento</a></li>
+                <li><a href="#contacto">Contacto & Localização</a></li>
+            </ul>
+        </nav>
+        <a href="https://wa.me/5531972148479" target="_blank" class="btn-red">
+            <i class="fa-brands fa-whatsapp"></i> WhatsApp
+        </a>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="inicio" class="hero">
+        <h1>Assistência Técnica <span>Especializada</span></h1>
+        <p>Manutenção em Smartpones,Iphones, computadores e venda de acessórios em Betim.</p>
+        <a href="#orcamento" class="btn-red"><i class="fa-solid fa-calculator"></i> Pedir Orçamento</a>
+    </section>
+
+    <!-- Serviços -->
+    <section id="servicos" class="services">
+        <h2 style="text-align: center;">Nossos Serviços</h2>
+        <div class="services-grid">
+            <div class="card">
+                <i class="fa-solid fa-mobile-screen-button"></i>
+                <h3>Troca de Tela & Bateria</h3>
+                <p>Substituição rápida e garantida de telas quebradas e baterias viciadas.</p>
+            </div>
+            <div class="card">
+                <i class="fa-solid fa-bolt"></i>
+                <h3>Conector de Carga</h3>
+                <p>Reparo e troca de conectores de carga/porta USB para aparelhos que não carregam.</p>
+            </div>
+            <div class="card">
+                <i class="fa-solid fa-laptop-code"></i>
+                <h3>Reparo de Computadores</h3>
+                <p>Formatação, limpeza de componentes, upgrade de SSD e manutenção de hardware.</p>
+            </div>
+            <div class="card">
+                <i class="fa-solid fa-plug"></i>
+                <h3>Acessórios & Carregadores</h3>
+                <p>Capas, películas de proteção, cabos e acessórios de alta qualidade.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Formulário de Orçamento -->
+    <section id="orcamento" class="info-section">
+        <div style="max-width: 600px; margin: 0 auto;">
+            <h2 style="text-align: center; margin-bottom: 1rem;">Solicite um Orçamento Rápido</h2>
+            <form id="contactForm" onsubmit="enviarMensagem(event)" style="display: flex; flex-direction: column; gap: 15px;">
+                <input type="text" id="nome" placeholder="O seu nome completo" required>
+                <input type="tel" id="telefone" placeholder="O seu telefone / WhatsApp" required>
+                <input type="text" id="aparelho" placeholder="Modelo do aparelho (ex: iPhone 11, Samsung A52)" required>
+                <textarea id="defeito" rows="4" placeholder="Descreva o problema ou o serviço pretendido" required></textarea>
+                <button type="submit" class="btn-red" style="justify-content: center; width: 100%;">
+                    <i class="fa-brands fa-whatsapp"></i> Enviar Mensagem no WhatsApp
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Informações e Localização -->
+    <section id="contacto" class="info-section" style="background-color: var(--bg-main);">
+        <div class="info-grid">
+            <div class="info-card">
+                <i class="fa-solid fa-location-dot"></i>
+                <h3>Endereço</h3>
+                <!-- Transformado em link clicável que abre o Google Maps -->
+                <a href="https://maps.google.com/?q=Rua+Olga+Assuncao+1212+Novo+Horizonte+Betim+MG" target="_blank" style="color: inherit; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='var(--primary-red)'" onmouseout="this.style.color='inherit'">
+                    <p>Rua Olga Assunção, 1212</p>
+                    <p>Bairro Novo Horizonte - Betim / MG</p>
+                    <small style="color: var(--primary-red); display: inline-block; margin-top: 5px;"><i class="fa-solid fa-map-location-dot"></i> Ver no Google Maps</small>
+                </a>
+            </div>
+            <div class="info-card">
+                <i class="fa-solid fa-phone"></i>
+                <h3>Telefone / WhatsApp</h3>
+                <p>(31) 97214-8479</p>
+                <p>Atendimento rápido para orçamentos e dúvidas.</p>
+            </div>
+            <div class="info-card">
+                <i class="fa-solid fa-clock"></i>
+                <h3>Horário de Atendimento</h3>
+                <p>Segunda a Sexta: 08:00 - 18:00</p>
+                <p>Sábado: 08:00 - 17:00</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Rodapé -->
+    <footer>
+        <p>&copy; 2026 <span>Lung InfoCell</span> | Tel: (31) 97214-8479 | Rua Olga Assunção, 1212 - Novo Horizonte, Betim - MG.</p>
+    </footer>
+
+    <!-- Ficheiro JS Externo carregado pelo Flask -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

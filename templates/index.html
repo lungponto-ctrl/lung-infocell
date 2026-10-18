@@ -5,10 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lung InfoCell - Assistência Técnica & Tecnologia</title>
 
-    <!-- Ícones FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <!-- Ficheiro CSS Externo carregado pelo Flask -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -23,8 +20,10 @@
             <ul>
                 <li><a href="#inicio">Início</a></li>
                 <li><a href="#servicos">Serviços</a></li>
+                <li><a href="#consultar-os">Consultar OS</a></li>
                 <li><a href="#orcamento">Orçamento</a></li>
-                <li><a href="#contacto">Contacto & Localização</a></li>
+                <li><a href="#contacto">Contato</a></li>
+                <li><a href="/admin" style="color: var(--primary-red); font-weight: bold;"><i class="fa-solid fa-user-gear"></i> Área do Técnico</a></li>
             </ul>
         </nav>
         <a href="https://wa.me/5531972148479" target="_blank" class="btn-red">
@@ -35,7 +34,7 @@
     <!-- Hero Section -->
     <section id="inicio" class="hero">
         <h1>Assistência Técnica <span>Especializada</span></h1>
-        <p>Manutenção em Smartpones,Iphones, computadores e venda de acessórios em Betim.</p>
+        <p>Conserto de smartphones, iPhones, computadores e venda de acessórios em Betim.</p>
         <a href="#orcamento" class="btn-red"><i class="fa-solid fa-calculator"></i> Pedir Orçamento</a>
     </section>
 
@@ -46,7 +45,7 @@
             <div class="card">
                 <i class="fa-solid fa-mobile-screen-button"></i>
                 <h3>Troca de Tela & Bateria</h3>
-                <p>Substituição rápida e garantida de telas quebradas e baterias viciadas.</p>
+                <p>Substituição rápida e garantida de telas quebradas e baterias viciadas para smartphones e iPhones.</p>
             </div>
             <div class="card">
                 <i class="fa-solid fa-bolt"></i>
@@ -55,14 +54,31 @@
             </div>
             <div class="card">
                 <i class="fa-solid fa-laptop-code"></i>
-                <h3>Reparo de Computadores</h3>
-                <p>Formatação, limpeza de componentes, upgrade de SSD e manutenção de hardware.</p>
+                <h3>Conserto de Computadores</h3>
+                <p>Formatação, limpeza preventiva, upgrade de SSD e manutenção de hardware.</p>
             </div>
             <div class="card">
                 <i class="fa-solid fa-plug"></i>
                 <h3>Acessórios & Carregadores</h3>
-                <p>Capas, películas de proteção, cabos e acessórios de alta qualidade.</p>
+                <p>Capinhas, películas de proteção, cabos e acessórios de alta qualidade.</p>
             </div>
+        </div>
+    </section>
+
+    <!-- Consulta de Ordem de Serviço (OS) -->
+    <section id="consultar-os" class="info-section" style="background-color: var(--bg-card); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);">
+        <div style="max-width: 600px; margin: 0 auto; text-align: center;">
+            <h2 style="margin-bottom: 0.5rem;"><i class="fa-solid fa-magnifying-glass"></i> Consultar Ordem de Serviço</h2>
+            <p style="color: var(--text-gray); margin-bottom: 1.5rem;">Digite o código da sua OS (ex: OS-1024) para verificar o status do seu aparelho.</p>
+
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="inputConsultaOS" placeholder="Ex: OS-1024 ou 1024" style="flex: 1; padding: 0.9rem; background-color: var(--bg-main); color: white; border: 1px solid var(--border-color); border-radius: 5px; font-size: 1rem; text-transform: uppercase;">
+                <button onclick="consultarOSCliente()" class="btn-red" style="padding: 0 1.5rem; white-space: nowrap;">
+                    <i class="fa-solid fa-search"></i> Consultar
+                </button>
+            </div>
+
+            <div id="resultadoConsulta" style="margin-top: 20px; padding: 15px; border-radius: 6px; display: none; font-weight: 500;"></div>
         </div>
     </section>
 
@@ -71,10 +87,10 @@
         <div style="max-width: 600px; margin: 0 auto;">
             <h2 style="text-align: center; margin-bottom: 1rem;">Solicite um Orçamento Rápido</h2>
             <form id="contactForm" onsubmit="enviarMensagem(event)" style="display: flex; flex-direction: column; gap: 15px;">
-                <input type="text" id="nome" placeholder="O seu nome completo" required>
-                <input type="tel" id="telefone" placeholder="O seu telefone / WhatsApp" required>
+                <input type="text" id="nome" placeholder="Seu nome completo" required>
+                <input type="tel" id="telefone" placeholder="Seu telefone / WhatsApp" required>
                 <input type="text" id="aparelho" placeholder="Modelo do aparelho (ex: iPhone 11, Samsung A52)" required>
-                <textarea id="defeito" rows="4" placeholder="Descreva o problema ou o serviço pretendido" required></textarea>
+                <textarea id="defeito" rows="4" placeholder="Descreva o problema ou o serviço desejado" required></textarea>
                 <button type="submit" class="btn-red" style="justify-content: center; width: 100%;">
                     <i class="fa-brands fa-whatsapp"></i> Enviar Mensagem no WhatsApp
                 </button>
@@ -88,12 +104,8 @@
             <div class="info-card">
                 <i class="fa-solid fa-location-dot"></i>
                 <h3>Endereço</h3>
-                <!-- Transformado em link clicável que abre o Google Maps -->
-                <a href="https://maps.google.com/?q=Rua+Olga+Assuncao+1212+Novo+Horizonte+Betim+MG" target="_blank" style="color: inherit; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='var(--primary-red)'" onmouseout="this.style.color='inherit'">
-                    <p>Rua Olga Assunção, 1212</p>
-                    <p>Bairro Novo Horizonte - Betim / MG</p>
-                    <small style="color: var(--primary-red); display: inline-block; margin-top: 5px;"><i class="fa-solid fa-map-location-dot"></i> Ver no Google Maps</small>
-                </a>
+                <p>Rua Olga Assunção, 1212</p>
+                <p>Bairro Novo Horizonte - Betim / MG</p>
             </div>
             <div class="info-card">
                 <i class="fa-solid fa-phone"></i>
@@ -105,17 +117,58 @@
                 <i class="fa-solid fa-clock"></i>
                 <h3>Horário de Atendimento</h3>
                 <p>Segunda a Sexta: 08:00 - 18:00</p>
-                <p>Sábado: 08:00 - 17:00</p>
+                <p>Sábado: 08:00 - 12:00</p>
             </div>
         </div>
     </section>
 
     <!-- Rodapé -->
     <footer>
-        <p>&copy; 2026 <span>Lung InfoCell</span> | Tel: (31) 97214-8479 | Rua Olga Assunção, 1212 - Novo Horizonte, Betim - MG.</p>
+        <p>&copy; 2026 <span>Lung InfoCell</span> | Tel: (31) 97214-8479 | Rua Olga Assunção, 1212 - Novo Horizonte, Betim - MG. | <a href="/admin" style="color: var(--text-gray); text-decoration: underline;"><i class="fa-solid fa-lock"></i> Acesso Restrito</a></p>
     </footer>
 
-    <!-- Ficheiro JS Externo carregado pelo Flask -->
     <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+    <script>
+        async function consultarOSCliente() {
+            const numeroOS = document.getElementById('inputConsultaOS').value.trim();
+            const divResultado = document.getElementById('resultadoConsulta');
+
+            if (!numeroOS) {
+                alert("Por favor, digite o número da OS.");
+                return;
+            }
+
+            try {
+                const resposta = await fetch('/api/consultar-os', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ numero_os: numeroOS })
+                });
+
+                const resultado = await resposta.json();
+
+                divResultado.style.display = 'block';
+
+                if (resultado.sucesso) {
+                    divResultado.style.backgroundColor = 'rgba(37, 211, 102, 0.15)';
+                    divResultado.style.color = '#25d366';
+                    divResultado.style.border = '1px solid #25d366';
+                    divResultado.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${resultado.mensagem}`;
+                } else {
+                    divResultado.style.backgroundColor = 'rgba(229, 9, 20, 0.15)';
+                    divResultado.style.color = 'var(--primary-red)';
+                    divResultado.style.border = '1px solid var(--primary-red)';
+                    divResultado.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ${resultado.mensagem}`;
+                }
+            } catch (erro) {
+                console.error("Erro ao consultar OS:", erro);
+                divResultado.style.display = 'block';
+                divResultado.style.backgroundColor = 'rgba(229, 9, 20, 0.15)';
+                divResultado.style.color = 'var(--primary-red)';
+                divResultado.innerHTML = "Ocorreu um erro ao consultar. Tente novamente.";
+            }
+        }
+    </script>
 </body>
 </html>

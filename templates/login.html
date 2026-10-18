@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acesso Restrito - Lung InfoCell</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body style="display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+
+    <div style="background-color: var(--bg-card); padding: 2.5rem; border-radius: 8px; border: 1px solid var(--border-color); width: 100%; max-width: 400px; text-align: center;">
+        <div class="logo" style="justify-content: center; margin-bottom: 1.5rem;">
+            <i class="fa-solid fa-microchip"></i>
+            <div>Lung <span>InfoCell</span></div>
+        </div>
+
+        <h3 style="margin-bottom: 1.5rem; color: var(--text-gray);"><i class="fa-solid fa-lock"></i> Área Restrita do Técnico</h3>
+
+        {% if erro %}
+            <div style="background-color: rgba(229, 9, 20, 0.2); color: var(--primary-red); padding: 10px; border-radius: 5px; margin-bottom: 15px; border: 1px solid var(--primary-red);">
+                {{ erro }}
+            </div>
+        {% endif %}
+
+        <form action="/login" method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+            <input type="password" name="senha" placeholder="Digite a Senha de Acesso" required style="padding: 0.9rem; text-align: center; font-size: 1.1rem;">
+            <button type="submit" class="btn-red" style="justify-content: center; width: 100%;">
+                <i class="fa-solid fa-right-to-bracket"></i> Entrar no Painel
+            </button>
+        </form>
+
+        <a href="/" style="display: block; margin-top: 20px; color: var(--text-gray); text-decoration: none; font-size: 0.9rem;">
+            ← Voltar ao Site Principal
+        </a>
+    </div>
+
+</body>
+</html>

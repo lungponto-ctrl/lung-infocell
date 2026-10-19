@@ -7,8 +7,8 @@ app = Flask(__name__)
 app.secret_key = 'chave_secreta_lung_infocell'
 
 # Configuração com a Porta 6543 (Connection Pooler do Supabase) para evitar o erro de rede no Render
-db_url = 'postgresql+psycopg2://postgres:30515657Lu.%40@db.kuavbwwvjrnygegwnein.supabase.co:6543/postgres'
-
+# URL com suporte a pooler e parâmetros para forçar estabilidade de rede no Render
+db_url = 'postgresql+psycopg2://postgres:30515657Lu.%40@db.kuavbwwvjrnygegwnein.supabase.co:6543/postgres?sslmode=require'
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 

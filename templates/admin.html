@@ -192,7 +192,7 @@
                         <button onclick="excluirOS('{{ codigo }}')" class="btn-outline" style="padding: 0.3rem 0.7rem; font-size: 0.8rem; border-color: #e74c3c; color: #e74c3c;">
                             <i class="fa-solid fa-trash"></i> Excluir
                         </button>
-                        <button onclick="enviarWhatsApp('{{ codigo }}', '{{ info.cliente }}', '{{ info.telefone }}', '{{ info.aparelho }}', '{{ info.defeito }}', '{{ info.status }}')" class="btn-red" style="padding: 0.3rem 0.7rem; font-size: 0.8rem; background-color: #25d366; border-color: #25d366;">
+                        <button onclick="enviarWhatsApp('{{ codigo }}', '{{ info.cliente }}', '{{ info.telefone }}', '{{ info.aparelho }}', '{{ info.defeito }}', '{{ info.status }}', '{{ info.valor }}')" class="btn-red" style="padding: 0.3rem 0.7rem; font-size: 0.8rem; background-color: #25d366; border-color: #25d366;">
                             <i class="fa-brands fa-whatsapp"></i> Enviar
                         </button>
                     </div>
@@ -418,7 +418,7 @@
             }
         }
 
-      function enviarWhatsApp(os, cliente, telefone, aparelho, defeito, status) {
+        function enviarWhatsApp(os, cliente, telefone, aparelho, defeito, status, valor) {
             const linkSite = "https://lung-infocell.onrender.com/#consultar-os";
 
             const mensagem = `📱 *LUNG INFOCELL - Ordem de Serviço*\n` +
@@ -428,13 +428,14 @@
                 `📋 *OS:* ${os}\n` +
                 `🔧 *Aparelho:* ${aparelho}\n` +
                 `🛠️ *Defeito:* ${defeito}\n` +
-                `📌 *Status:* ${status}\n\n` +
+                `📌 *Status:* ${status}\n` +
+                `💰 *Valor:* ${valor}\n\n` +
                 `🔍 *Como acompanhar o status do seu aparelho:*\n` +
                 `Acesse o link direto: ${linkSite}\n` +
-                `1. Role até a área de consultar OS  do site\n` +
+                `1. Role até a área de consultar OS do site\n` +
                 `2. Digite o número da sua OS (*${os}*)\n` +
                 `3. Digite os *4 últimos dígitos do seu telefone*\n\n` +
-                `Qualquer dúvida, estamos à disposição Obrigado pela Preferencia Equipe Lung InfoCell! 🚀`;
+                `Qualquer dúvida, estamos à disposição. Obrigado pela preferência! Equipe Lung InfoCell! 🚀`;
 
             const telLimpo = telefone.replace(/\D/g, '');
             const url = `https://api.whatsapp.com/send?phone=55${telLimpo}&text=${encodeURIComponent(mensagem)}`;

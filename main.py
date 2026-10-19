@@ -43,7 +43,7 @@ class OrdemServico(db.Model):
     valor = db.Column(db.String(50), nullable=False, default="A definir")
 
 
-# Criar tabelas e registo inicial
+# Criar tabelas e registro inicial
 with app.app_context():
     db.create_all()
     if not Tecnico.query.first():
@@ -96,7 +96,7 @@ def admin():
             "endereco": os_item.endereco,
             "aparelho": os_item.aparelho,
             "defeito": os_item.defeito,
-            "relatorio": os_item.relatorio,
+            "relatorio": os_item.relatorio or "",
             "avarias": os_item.avarias.split(", ") if os_item.avarias else [],
             "status": os_item.status,
             "valor": os_item.valor
@@ -162,7 +162,8 @@ def editar_os():
     os_item.aparelho = dados.get('aparelho', os_item.aparelho)
     os_item.defeito = dados.get('defeito', os_item.defeito)
     os_item.relatorio = dados.get('relatorio', os_item.relatorio)
-    os_item.avarias = avarias_str
+    if avarias_str:
+        os_item.avarias = avarias_str
     os_item.status = dados.get('status', os_item.status)
     os_item.valor = dados.get('valor', os_item.valor)
 
@@ -209,40 +210,59 @@ def atualizar_status_os():
 
 @app.route('/api/consultar-os', methods=['POST'])
 def consultar_os():
-    dados = request.get_json()
-    numero_os = dados.get('numero_os', '').strip().upper()
-    digitos_telefone = apenas_numeros(dados.get('digitos_telefone', ''))
+    dados = request.get_json() or {}
 
+    # Suporta campos 'numero_os' / 'codigo_os' e 'digitos_telefone' / 'telefone'
+    numero_os = str(dados.get('numero_os') or dados.get('codigo_os') or '').strip().upper()
+    digitos_telefone = apenas_numeros(dados.get('digitos_telefone') or dados.get('telefone') or '')
+
+    if not numero_os:
+        return jsonify({"sucesso": False, "mensagem": "Por favor, informe o número da OS."})
+
+    # Adiciona o prefixo OS- se o usuário digitou apenas números (ex: 1025 -> OS-1025)
     if not numero_os.startswith('OS-') and numero_os.isdigit():
-        numero_os = f"OS-{numero_os}"
+        numero_os_formatado = f"OS-{numero_os}"
+    else:
+        numero_os_formatado = numero_os
 
+    # Busca no banco pelo código formatado ou pelo digitado
+    os_item = OrdemServico.query.filter(
+        (OrdemServico.codigo == numero_os_formatado) | (OrdemServico.codigo == numero_os)
+    ).first()
+
+    if not os_item:
+        return jsonify({
+            "sucesso": False,
+            "mensagem": "Ordem de Serviço não encontrada. Verifique o número digitado."
+        })
+
+    # Validação do telefone
     if len(digitos_telefone) < 4:
         return jsonify({
             "sucesso": False,
             "mensagem": "Por favor, informe os 4 últimos dígitos do telefone do cliente."
         })
 
-    os_item = OrdemServico.query.filter_by(codigo=numero_os).first()
+    telefone_cadastrado_limpo = apenas_numeros(os_item.telefone)
+    ultimos_4_cadastrados = telefone_cadastrado_limpo[-4:] if len(telefone_cadastrado_limpo) >= 4 else ""
+    ultimos_4_digitados = digitos_telefone[-4:]
 
-    if os_item:
-        telefone_cadastrado_limpo = apenas_numeros(os_item.telefone)
-        ultimos_4_cadastrados = telefone_cadastrado_limpo[-4:] if len(telefone_cadastrado_limpo) >= 4 else ""
-        ultimos_4_digitados = digitos_telefone[-4:]
-
-        if ultimos_4_cadastrados and ultimos_4_digitados == ultimos_4_cadastrados:
-            return jsonify({
-                "sucesso": True,
-                "mensagem": f"Aparelho: {os_item.aparelho} | Status: {os_item.status} | Valor: {os_item.valor}"
-            })
-        else:
-            return jsonify({
-                "sucesso": False,
-                "mensagem": "Os 4 últimos dígitos do telefone não conferem com esta OS."
-            })
+    if ultimos_4_cadastrados and ultimos_4_digitados == ultimos_4_cadastrados:
+        return jsonify({
+            "sucesso": True,
+            "codigo": os_item.codigo,
+            "cliente": os_item.cliente,
+            "aparelho": os_item.aparelho,
+            "defeito": os_item.defeito,
+            "status": os_item.status,
+            "valor": os_item.valor,
+            "relatorio": os_item.relatorio or "Em avaliação",
+            "mensagem": f"Aparelho: {os_item.aparelho} | Status: {os_item.status} | Valor: {os_item.valor}"
+        })
     else:
         return jsonify({
             "sucesso": False,
-            "mensagem": "Ordem de Serviço não encontrada. Verifique os dados digitados."
+            "mensagem": "Os 4 últimos dígitos do telefone não conferem com esta OS."
         })
 
 

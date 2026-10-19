@@ -418,8 +418,8 @@
             }
         }
 
-        function enviarWhatsApp(os, cliente, telefone, aparelho, defeito, status) {
-            const linkSite = "https://lung-infocell.onrender.com";
+      function enviarWhatsApp(os, cliente, telefone, aparelho, defeito, status) {
+            const linkSite = "https://lung-infocell.onrender.com/#consultar-os";
 
             const mensagem = `📱 *LUNG INFOCELL - Ordem de Serviço*\n` +
                 `-----------------------------------\n` +
@@ -430,9 +430,10 @@
                 `🛠️ *Defeito:* ${defeito}\n` +
                 `📌 *Status:* ${status}\n\n` +
                 `🔍 *Como acompanhar o status do seu aparelho:*\n` +
-                `Acesse: ${linkSite}\n` +
-                `1. Digite o número da sua OS (*${os}*)\n` +
-                `2. Digite os *4 últimos dígitos do seu telefone*\n\n` +
+                `Acesse o link direto: ${linkSite}\n` +
+                `1. Role até a área de consultar OS  do site\n` +
+                `2. Digite o número da sua OS (*${os}*)\n` +
+                `3. Digite os *4 últimos dígitos do seu telefone*\n\n` +
                 `Qualquer dúvida, estamos à disposição! 🚀`;
 
             const telLimpo = telefone.replace(/\D/g, '');

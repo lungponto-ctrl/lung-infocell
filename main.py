@@ -101,6 +101,15 @@ def admin():
     ordens_bd = OrdemServico.query.order_by(OrdemServico.id.desc()).all()
     ordens_dict = {}
     for os_item in ordens_bd:
+        # Garante que as avarias sejam tratadas corretamente como lista para o HTML
+        if os_item.avarias:
+            if isinstance(os_item.avarias, str):
+                avarias_lista = [a.strip() for a in os_item.avarias.split(",") if a.strip()]
+            else:
+                avarias_lista = os_item.avarias
+        else:
+            avarias_lista = []
+
         ordens_dict[os_item.codigo] = {
             "cliente": os_item.cliente,
             "telefone": os_item.telefone,
@@ -108,7 +117,7 @@ def admin():
             "aparelho": os_item.aparelho,
             "defeito": os_item.defeito,
             "relatorio": os_item.relatorio or "",
-            "avarias": os_item.avarias.split(", ") if os_item.avarias else [],
+            "avarias": avarias_lista,
             "status": os_item.status,
             "valor": os_item.valor
         }

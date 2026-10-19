@@ -186,7 +186,7 @@
                         <button onclick="alterarStatus('{{ codigo }}')" class="btn-outline" style="padding: 0.3rem 0.7rem; font-size: 0.8rem;">
                             <i class="fa-solid fa-arrows-rotate"></i> Atualizar
                         </button>
-                        <button onclick="abrirModalEdicao('{{ codigo }}', {{ info | tojson }})" class="btn-outline" style="padding: 0.3rem 0.7rem; font-size: 0.8rem; border-color: #f39c12; color: #f39c12;">
+                        <button onclick="abrirModalEdicao('{{ codigo }}', '{{ info.cliente }}', '{{ info.telefone }}', '{{ info.endereco }}', '{{ info.aparelho }}', '{{ info.defeito }}', '{{ info.relatorio }}', '{{ info.valor }}', '{{ info.status }}')" class="btn-outline" style="padding: 0.3rem 0.7rem; font-size: 0.8rem; border-color: #f39c12; color: #f39c12;">
                             <i class="fa-solid fa-pen-to-square"></i> Editar
                         </button>
                         <button onclick="excluirOS('{{ codigo }}')" class="btn-outline" style="padding: 0.3rem 0.7rem; font-size: 0.8rem; border-color: #e74c3c; color: #e74c3c;">
@@ -325,17 +325,17 @@
             }
         }
 
-        function abrirModalEdicao(codigo, info) {
+        function abrirModalEdicao(codigo, cliente, telefone, endereco, aparelho, defeito, relatorio, valor, status) {
             document.getElementById('edit_codigo').value = codigo;
             document.getElementById('modalTitulo').innerHTML = `<i class="fa-solid fa-pen-to-square" style="color: var(--primary-red);"></i> Editar ${codigo}`;
-            document.getElementById('edit_cliente').value = info.cliente || '';
-            document.getElementById('edit_telefone').value = info.telefone || '';
-            document.getElementById('edit_endereco').value = info.endereco || '';
-            document.getElementById('edit_aparelho').value = info.aparelho || '';
-            document.getElementById('edit_defeito').value = info.defeito || '';
-            document.getElementById('edit_relatorio').value = info.relatorio || '';
-            document.getElementById('edit_valor').value = info.valor || '';
-            document.getElementById('edit_status').value = info.status || 'Em Análise Técnica';
+            document.getElementById('edit_cliente').value = cliente || '';
+            document.getElementById('edit_telefone').value = telefone || '';
+            document.getElementById('edit_endereco').value = endereco || '';
+            document.getElementById('edit_aparelho').value = aparelho || '';
+            document.getElementById('edit_defeito').value = defeito || '';
+            document.getElementById('edit_relatorio').value = relatorio || '';
+            document.getElementById('edit_valor').value = valor || '';
+            document.getElementById('edit_status').value = status || 'Em Análise Técnica';
 
             document.getElementById('modalEdicao').style.display = 'flex';
         }

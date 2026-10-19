@@ -3,291 +3,413 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Admin - Lung InfoCell</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Painel Administrativo - Lung InfoCell</title>
     <style>
-        .checklist-avarias {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            background: var(--bg-main);
-            padding: 12px;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
+        :root {
+            --primary-color: #0088cc;
+            --primary-hover: #006699;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --danger-color: #e74c3c;
+            --danger-hover: #c0392b;
+            --warning-color: #f39c12;
+            --success-color: #2ecc71;
+            --border-radius: 8px;
         }
-        .checklist-item {
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+        }
+
+        .header-bar {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
-            color: var(--text-gray);
+            background-color: var(--card-bg);
+            padding: 15px 25px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
         }
-        .checklist-item input {
-            width: auto !important;
+
+        .header-bar h1 {
+            color: var(--primary-color);
+            font-size: 1.5rem;
         }
-        .status-select {
-            padding: 0.4rem;
-            background-color: var(--bg-card);
-            color: white;
-            border: 1px solid var(--border-color);
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
             border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .btn-warning { background-color: var(--warning-color); color: white; }
+        .btn-danger { background-color: var(--danger-color); color: white; }
+        .btn-danger:hover { background-color: var(--danger-hover); }
+        .btn-secondary { background-color: #7f8c8d; color: white; }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+        }
+
+        .card h2 {
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            color: #444;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 8px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background-color: #fafafa;
+            color: #666;
+            font-weight: 600;
+        }
+
+        tr:hover { background-color: #f9f9f9; }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
             font-size: 0.85rem;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .status-analise { background-color: #ffeaa7; color: #d63031; }
+        .status-andamento { background-color: #74b9ff; color: #0984e3; }
+        .status-concluido { background-color: #55efc4; color: #00b894; }
+        .status-entregue { background-color: #b2bec3; color: #2d3436; }
+
+        .action-btns {
+            display: flex;
+            gap: 5px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 25px;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
         }
     </style>
 </head>
-<body style="padding: 2rem 5%;">
+<body>
 
-    <header style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
-        <div class="logo">
-            <i class="fa-solid fa-microchip"></i>
-            <div>Lung <span>InfoCell - Painel do Técnico</span></div>
+    <div class="container">
+        <div class="header-bar">
+            <h1>Lung InfoCell - Painel do Técnico</h1>
+            <div class="header-actions">
+                <button class="btn btn-warning" onclick="abrirModalSenha()">Alterar Senha</button>
+                <a href="/logout" class="btn btn-secondary">Sair</a>
+            </div>
         </div>
-        <div style="display: flex; gap: 15px;">
-            <a href="/" class="btn-outline">Voltar ao Site</a>
-            <a href="/logout" class="btn-red" style="padding: 0.5rem 1rem;"><i class="fa-solid fa-power-off"></i> Sair</a>
+
+        <div class="card">
+            <h2>Ordens de Serviço Registradas</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Código OS</th>
+                            <th>Cliente</th>
+                            <th>Telefone</th>
+                            <th>Aparelho</th>
+                            <th>Status</th>
+                            <th>Valor</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-ordens">
+                        {% for codigo, os in ordens.items() %}
+                        <tr id="linha-{{ codigo }}">
+                            <td><strong>{{ codigo }}</strong></td>
+                            <td>{{ os.cliente }}</td>
+                            <td>{{ os.telefone }}</td>
+                            <td>{{ os.aparelho }}</td>
+                            <td><span class="status-badge status-analise">{{ os.status }}</span></td>
+                            <td>R$ {{ os.valor }}</td>
+                            <td class="action-btns">
+                                <button class="btn btn-primary" onclick="abrirModalEdicao('{{ codigo }}', {{ os | tojson }})">Editar</button>
+                                <button class="btn btn-danger" onclick="excluirOS('{{ codigo }}')">Excluir</button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" style="text-align: center; color: #777;">Nenhuma Ordem de Serviço cadastrada ainda.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
-    </header>
+    </div>
 
-    <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 30px;">
-
-        <!-- Coluna Esquerda: Criar OS + Alterar Senha -->
-        <div style="display: flex; flex-direction: column; gap: 20px;">
-
-            <!-- Formulário para Criar OS -->
-            <div style="background-color: var(--bg-card); padding: 2rem; border-radius: 8px; border: 1px solid var(--border-color);">
-                <h2 style="margin-bottom: 1.5rem;"><i class="fa-solid fa-plus-circle"></i> Nova Ordem de Serviço</h2>
-
-                <form id="formNovaOS" onsubmit="salvarOS(event)" style="display: flex; flex-direction: column; gap: 15px;">
-                    <input type="text" id="admin_cliente" placeholder="Nome do Cliente" required>
-                    <input type="tel" id="admin_telefone" placeholder="Telefone / WhatsApp" required>
-                    <input type="text" id="admin_endereco" placeholder="Endereço do Cliente (Rua, Bairro, Nº)" required>
-
-                    <input type="text" id="admin_aparelho" placeholder="Aparelho (ex: iPhone 11, Samsung A52)" required>
-                    <input type="text" id="admin_defeito" placeholder="Defeito relatado pelo cliente" required>
-
-                    <textarea id="admin_relatorio" rows="3" placeholder="Relatório Técnico / Observações da bancada..." style="padding: 0.8rem; background-color: var(--bg-main); color: white; border: 1px solid var(--border-color); border-radius: 5px;"></textarea>
-
-                    <label style="color: var(--text-gray); font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
-                        <i class="fa-solid fa-mobile-screen" style="color: var(--primary-red); font-size: 1.2rem;"></i> Checklist de Avarias / Estado do Aparelho:
-                    </label>
-                    <div class="checklist-avarias">
-                        <label class="checklist-item"><input type="checkbox" name="avaria" value="Tela trincada / arranhada"> Tela arranhada/trincada</label>
-                        <label class="checklist-item"><input type="checkbox" name="avaria" value="Marcas na carcaça"> Marcas na carcaça</label>
-                        <label class="checklist-item"><input type="checkbox" name="avaria" value="Tampa traseira quebrada"> Tampa traseira quebrada</label>
-                        <label class="checklist-item"><input type="checkbox" name="avaria" value="Lente da câmera trincada"> Lente da câmera trincada</label>
-                        <label class="checklist-item"><input type="checkbox" name="avaria" value="Aparelho não liga"> Aparelho não liga</label>
-                        <label class="checklist-item"><input type="checkbox" name="avaria" value="Sem gaveta de CHIP/SIM"> Sem gaveta de CHIP</label>
-                    </div>
-
-                    <input type="text" id="admin_valor" placeholder="Valor Estimado (ex: R$ 250,00)" required>
-
-                    <label for="admin_status" style="color: var(--text-gray);">Status Inicial:</label>
-                    <select id="admin_status" style="padding: 0.8rem; background-color: var(--bg-main); color: white; border: 1px solid var(--border-color); border-radius: 5px;">
+    <!-- Modal Editar OS -->
+    <div id="modalEdicao" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalEdicaoTitulo">Editar Ordem de Serviço</h3>
+                <span style="cursor:pointer; font-weight:bold;" onclick="fecharModalEdicao()">&times;</span>
+            </div>
+            <form id="formEditarOS" onsubmit="salvarEdicaoOS(event)">
+                <input type="hidden" id="edit-codigo">
+                <div class="form-group">
+                    <label>Cliente</label>
+                    <input type="text" id="edit-cliente" required>
+                </div>
+                <div class="form-group">
+                    <label>Telefone</label>
+                    <input type="text" id="edit-telefone" required>
+                </div>
+                <div class="form-group">
+                    <label>Endereço</label>
+                    <input type="text" id="edit-endereco">
+                </div>
+                <div class="form-group">
+                    <label>Aparelho</label>
+                    <input type="text" id="edit-aparelho" required>
+                </div>
+                <div class="form-group">
+                    <label>Defeito Reclamado</label>
+                    <textarea id="edit-defeito" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Relatório Técnico</label>
+                    <textarea id="edit-relatorio" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="edit-status">
                         <option value="Em Análise Técnica">Em Análise Técnica</option>
                         <option value="Aguardando Peça">Aguardando Peça</option>
                         <option value="Em Manutenção">Em Manutenção</option>
                         <option value="Pronto para Retirada">Pronto para Retirada</option>
-                        <option value="Entregue / Concluído">Entregue / Concluído</option>
+                        <option value="Finalizado/Entregue">Finalizado/Entregue</option>
                     </select>
-
-                    <button type="submit" class="btn-red" style="justify-content: center; margin-top: 10px;">
-                        <i class="fa-solid fa-save"></i> Gerar e Salvar OS
-                    </button>
-                </form>
-                <div id="resultadoCadastro" style="margin-top: 15px; font-weight: bold;"></div>
-            </div>
-
-            <!-- Alterar Senha do Técnico -->
-            <div style="background-color: var(--bg-card); padding: 2rem; border-radius: 8px; border: 1px solid var(--border-color);">
-                <h3 style="margin-bottom: 1rem; font-size: 1.2rem;"><i class="fa-solid fa-key"></i> Alterar Senha de Acesso</h3>
-                <form id="formAlterarSenha" onsubmit="alterarSenhaAdmin(event)" style="display: flex; flex-direction: column; gap: 12px;">
-                    <input type="password" id="senha_atual" placeholder="Senha Atual" required>
-                    <input type="password" id="nova_senha" placeholder="Nova Senha" required>
-                    <button type="submit" class="btn-outline" style="justify-content: center;">
-                        <i class="fa-solid fa-shield-halved"></i> Atualizar Senha
-                    </button>
-                </form>
-                <div id="resultadoSenha" style="margin-top: 10px; font-size: 0.9rem; font-weight: bold;"></div>
-            </div>
-
-        </div>
-
-        <!-- Coluna Direita: Lista de OS Cadastradas com Busca -->
-        <div style="background-color: var(--bg-card); padding: 2rem; border-radius: 8px; border: 1px solid var(--border-color);">
-            <h2 style="margin-bottom: 1rem;"><i class="fa-solid fa-list-check"></i> Ordens de Serviço Ativas</h2>
-
-            <div style="margin-bottom: 1.5rem; position: relative;">
-                <input type="text" id="buscaAdmin" onkeyup="filtrarOrdensAdmin()" placeholder="Pesquisar por N° da OS, Cliente ou Aparelho..." style="width: 100%; padding: 0.8rem; padding-left: 2.2rem; background-color: var(--bg-main); color: white; border: 1px solid var(--border-color); border-radius: 5px; font-size: 0.95rem;">
-                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-gray);"></i>
-            </div>
-
-            <div id="listaOS">
-                {% for codigo, info in ordens.items() %}
-                <div class="card-os" style="background-color: var(--bg-main); padding: 1.2rem; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 12px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <strong class="codigo-os" style="color: var(--primary-red); font-size: 1.1rem;">{{ codigo }}</strong>
-                        <span style="font-size: 0.85rem; background: rgba(229, 9, 20, 0.2); padding: 3px 8px; border-radius: 4px; color: var(--primary-red);">{{ info.status }}</span>
-                    </div>
-
-                    <div style="margin-top: 5px; font-size: 0.95rem;">
-                        <strong class="nome-cliente">{{ info.cliente }}</strong> (<span class="nome-aparelho">{{ info.aparelho }}</span>)
-                    </div>
-
-                    <small style="color: var(--text-gray); display: block; margin-top: 5px; line-height: 1.4;">
-                        <i class="fa-solid fa-location-dot"></i> {{ info.endereco }}<br>
-                        <i class="fa-solid fa-screwdriver-wrench"></i> Defeito: {{ info.defeito }}<br>
-                        <i class="fa-solid fa-file-medical"></i> Relatório: {{ info.relatorio }}<br>
-                        <i class="fa-solid fa-triangle-exclamation"></i> Avarias: {{ info.avarias | join(', ') if info.avarias else 'Nenhuma' }}<br>
-                        <i class="fa-solid fa-tag"></i> Valor: {{ info.valor }}
-                    </small>
-
-                    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-color); display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                        <select id="status_{{ codigo }}" class="status-select">
-                            <option value="Em Análise Técnica" {% if info.status == 'Em Análise Técnica' %}selected{% endif %}>Em Análise Técnica</option>
-                            <option value="Aguardando Peça" {% if info.status == 'Aguardando Peça' %}selected{% endif %}>Aguardando Peça</option>
-                            <option value="Em Manutenção" {% if info.status == 'Em Manutenção' %}selected{% endif %}>Em Manutenção</option>
-                            <option value="Pronto para Retirada" {% if info.status == 'Pronto para Retirada' %}selected{% endif %}>Pronto para Retirada</option>
-                            <option value="Entregue / Concluído" {% if info.status == 'Entregue / Concluído' %}selected{% endif %}>Entregue / Concluído</option>
-                        </select>
-                        <button onclick="alterarStatus('{{ codigo }}')" class="btn-outline" style="padding: 0.3rem 0.7rem; font-size: 0.8rem;">
-                            <i class="fa-solid fa-arrows-rotate"></i> Atualizar
-                        </button>
-                        <button onclick="enviarWhatsAppOS('{{ codigo }}', '{{ info.telefone }}', '{{ info.cliente }}', '{{ info.aparelho }}', '{{ info.status }}', '{{ info.valor }}', '{{ info.defeito }}')" class="btn-red" style="padding: 0.3rem 0.7rem; font-size: 0.8rem; background-color: #25d366; border-color: #25d366;">
-                            <i class="fa-brands fa-whatsapp"></i> Enviar OS
-                        </button>
-                    </div>
                 </div>
-                {% endfor %}
-            </div>
+                <div class="form-group">
+                    <label>Valor (R$)</label>
+                    <input type="text" id="edit-valor">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="fecharModalEdicao()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                </div>
+            </form>
         </div>
+    </div>
 
+    <!-- Modal Alterar Senha -->
+    <div id="modalSenha" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Alterar Senha do Técnico</h3>
+                <span style="cursor:pointer; font-weight:bold;" onclick="fecharModalSenha()">&times;</span>
+            </div>
+            <form onsubmit="salvarNovaSenha(event)">
+                <div class="form-group">
+                    <label>Senha Atual</label>
+                    <input type="password" id="senha-atual" required>
+                </div>
+                <div class="form-group">
+                    <label>Nova Senha</label>
+                    <input type="password" id="nova-senha" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="fecharModalSenha()">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">Atualizar Senha</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script>
-        function filtrarOrdensAdmin() {
-            const termo = document.getElementById('buscaAdmin').value.toLowerCase();
-            const cards = document.querySelectorAll('.card-os');
+        function abrirModalEdicao(codigo, os) {
+            document.getElementById('edit-codigo').value = codigo;
+            document.getElementById('modalEdicaoTitulo').innerText = 'Editar ' + codigo;
+            document.getElementById('edit-cliente').value = os.cliente || '';
+            document.getElementById('edit-telefone').value = os.telefone || '';
+            document.getElementById('edit-endereco').value = os.endereco || '';
+            document.getElementById('edit-aparelho').value = os.aparelho || '';
+            document.getElementById('edit-defeito').value = os.defeito || '';
+            document.getElementById('edit-relatorio').value = os.relatorio || '';
+            document.getElementById('edit-status').value = os.status || 'Em Análise Técnica';
+            document.getElementById('edit-valor').value = os.valor || '';
 
-            cards.forEach(card => {
-                const codigo = card.querySelector('.codigo-os').innerText.toLowerCase();
-                const cliente = card.querySelector('.nome-cliente').innerText.toLowerCase();
-                const aparelho = card.querySelector('.nome-aparelho').innerText.toLowerCase();
-
-                if (codigo.includes(termo) || cliente.includes(termo) || aparelho.includes(termo)) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
+            document.getElementById('modalEdicao').style.display = 'flex';
         }
 
-        async function salvarOS(event) {
+        function fecharModalEdicao() {
+            document.getElementById('modalEdicao').style.display = 'none';
+        }
+
+        function salvarEdicaoOS(event) {
             event.preventDefault();
-
-            const avariasSelecionadas = Array.from(document.querySelectorAll('input[name="avaria"]:checked')).map(cb => cb.value);
-
+            const codigo = document.getElementById('edit-codigo').value;
             const dados = {
-                cliente: document.getElementById('admin_cliente').value,
-                telefone: document.getElementById('admin_telefone').value,
-                endereco: document.getElementById('admin_endereco').value,
-                aparelho: document.getElementById('admin_aparelho').value,
-                defeito: document.getElementById('admin_defeito').value,
-                relatorio: document.getElementById('admin_relatorio').value,
-                avarias: avariasSelecionadas,
-                valor: document.getElementById('admin_valor').value,
-                status: document.getElementById('admin_status').value
+                codigo_os: codigo,
+                cliente: document.getElementById('edit-cliente').value,
+                telefone: document.getElementById('edit-telefone').value,
+                endereco: document.getElementById('edit-endereco').value,
+                aparelho: document.getElementById('edit-aparelho').value,
+                defeito: document.getElementById('edit-defeito').value,
+                relatorio: document.getElementById('edit-relatorio').value,
+                status: document.getElementById('edit-status').value,
+                valor: document.getElementById('edit-valor').value
             };
 
-            const resposta = await fetch('/api/criar-os', {
+            fetch('/api/editar-os', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dados)
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.mensagem);
+                if (data.sucesso) location.reload();
             });
-
-            const resultado = await resposta.json();
-
-            if (resultado.sucesso) {
-                document.getElementById('resultadoCadastro').style.color = '#25d366';
-                document.getElementById('resultadoCadastro').innerText = `${resultado.mensagem} Código: ${resultado.codigo_os}`;
-                setTimeout(() => location.reload(), 1200);
-            }
         }
 
-        async function alterarStatus(codigoOS) {
-            const novoStatus = document.getElementById(`status_${codigoOS}`).value;
-
-            const resposta = await fetch('/api/atualizar-status-os', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    codigo_os: codigoOS,
-                    novo_status: novoStatus
+        function excluirOS(codigo) {
+            if (confirm(`Tem certeza de que deseja excluir a ${codigo}? Esta ação não pode ser desfeita.`)) {
+                fetch('/api/excluir-os', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ codigo_os: codigo })
                 })
-            });
-
-            const resultado = await resposta.json();
-
-            if (resultado.sucesso) {
-                alert(resultado.mensagem);
-                location.reload();
-            } else {
-                alert("Erro ao atualizar o status.");
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.mensagem);
+                    if (data.sucesso) {
+                        const linha = document.getElementById(`linha-${codigo}`);
+                        if (linha) linha.remove();
+                    }
+                });
             }
         }
 
-        async function alterarSenhaAdmin(event) {
+        function abrirModalSenha() {
+            document.getElementById('modalSenha').style.display = 'flex';
+        }
+
+        function fecharModalSenha() {
+            document.getElementById('modalSenha').style.display = 'none';
+        }
+
+        function salvarNovaSenha(event) {
             event.preventDefault();
+            const dados = {
+                senha_atual: document.getElementById('senha-atual').value,
+                nova_senha: document.getElementById('nova-senha').value
+            };
 
-            const senhaAtual = document.getElementById('senha_atual').value;
-            const novaSenha = document.getElementById('nova_senha').value;
-            const divResultado = document.getElementById('resultadoSenha');
-
-            const resposta = await fetch('/api/alterar-senha', {
+            fetch('/api/alterar-senha', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    senha_atual: senhaAtual,
-                    nova_senha: novaSenha
-                })
+                body: JSON.stringify(dados)
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.mensagem);
+                if (data.sucesso) fecharModalSenha();
             });
-
-            const resultado = await resposta.json();
-
-            divResultado.style.display = 'block';
-            if (resultado.sucesso) {
-                divResultado.style.color = '#25d366';
-                divResultado.innerText = resultado.mensagem;
-                document.getElementById('formAlterarSenha').reset();
-            } else {
-                divResultado.style.color = 'var(--primary-red)';
-                divResultado.innerText = resultado.mensagem;
-            }
         }
-
-        function enviarWhatsApp(os, cliente, telefone, aparelho, defeito, status) {
-    const linkSite = "https://lung-infocell.onrender.com";
-
-    const mensagem = `📱 *LUNG INFOCELL - Ordem de Serviço*\n` +
-        `-----------------------------------\n` +
-        `Olá, *${cliente}*!\n` +
-        `Sua Ordem de Serviço foi gerada com sucesso.\n\n` +
-        `📋 *OS:* ${os}\n` +
-        `🔧 *Aparelho:* ${aparelho}\n` +
-        `🛠️ *Defeito:* ${defeito}\n` +
-        `📌 *Status:* ${status}\n\n` +
-        `🔍 *Como acompanhar o status do seu aparelho:*\n` +
-        `Acesse: ${linkSite}\n` +
-        `1. Digite o número da sua OS (*${os}*)\n` +
-        `2. Digite os *4 últimos dígitos do seu telefone*\n\n` +
-        `Qualquer dúvida, estamos à disposição! 🚀`;
-
-    // Remove caracteres não numéricos do telefone do cliente para o link do WhatsApp
-    const telLimpo = telefone.replace(/\D/g, '');
-    const url = `https://api.whatsapp.com/send?phone=55${telLimpo}&text=${encodeURIComponent(mensagem)}`;
-
-    window.open(url, '_blank');
-}
     </script>
 </body>
 </html>

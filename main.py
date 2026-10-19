@@ -6,7 +6,7 @@ from flask_sqlalchemy import SQLAlchemy
 app = Flask(__name__)
 app.secret_key = 'chave_secreta_lung_infocell'
 
-# Configuração com SQLite para garantir 100% de estabilidade sem erros de rede no Render
+# Configuração com SQLite para garantir 100% de estabilidade no Render
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///lung_infocell.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -136,9 +136,57 @@ def criar_os():
 
     return jsonify({
         "sucesso": True,
-        "mensagem": "Ordem de Serviço salva no banco de dados com sucesso!",
+        "mensagem": "Ordem de Serviço salva com sucesso!",
         "codigo_os": codigo_os
     })
+
+
+@app.route('/api/editar-os', methods=['POST'])
+def editar_os():
+    if not session.get('tecnico_logado'):
+        return jsonify({"sucesso": False, "mensagem": "Acesso não autorizado."}), 403
+
+    dados = request.get_json()
+    codigo_os = dados.get('codigo_os')
+
+    os_item = OrdemServico.query.filter_by(codigo=codigo_os).first()
+    if not os_item:
+        return jsonify({"sucesso": False, "mensagem": "Ordem de Serviço não encontrada."}), 404
+
+    avarias_lista = dados.get('avarias', [])
+    avarias_str = ", ".join(avarias_lista) if isinstance(avarias_lista, list) else str(avarias_lista)
+
+    os_item.cliente = dados.get('cliente', os_item.cliente)
+    os_item.telefone = dados.get('telefone', os_item.telefone)
+    os_item.endereco = dados.get('endereco', os_item.endereco)
+    os_item.aparelho = dados.get('aparelho', os_item.aparelho)
+    os_item.defeito = dados.get('defeito', os_item.defeito)
+    os_item.relatorio = dados.get('relatorio', os_item.relatorio)
+    os_item.avarias = avarias_str
+    os_item.status = dados.get('status', os_item.status)
+    os_item.valor = dados.get('valor', os_item.valor)
+
+    db.session.commit()
+
+    return jsonify({"sucesso": True, "mensagem": f"Ordem de Serviço {codigo_os} atualizada com sucesso!"})
+
+
+@app.route('/api/excluir-os', methods=['POST'])
+def excluir_os():
+    if not session.get('tecnico_logado'):
+        return jsonify({"sucesso": False, "mensagem": "Acesso não autorizado."}), 403
+
+    dados = request.get_json()
+    codigo_os = dados.get('codigo_os')
+
+    os_item = OrdemServico.query.filter_by(codigo=codigo_os).first()
+    if not os_item:
+        return jsonify({"sucesso": False, "mensagem": "Ordem de Serviço não encontrada."}), 404
+
+    db.session.delete(os_item)
+    db.session.commit()
+
+    return jsonify({"sucesso": True, "mensagem": f"Ordem de Serviço {codigo_os} excluída com sucesso!"})
 
 
 @app.route('/api/atualizar-status-os', methods=['POST'])
@@ -162,4 +210,67 @@ def atualizar_status_os():
 @app.route('/api/consultar-os', methods=['POST'])
 def consultar_os():
     dados = request.get_json()
-    numero_os = dados.get
+    numero_os = dados.get('numero_os', '').strip().upper()
+    digitos_telefone = apenas_numeros(dados.get('digitos_telefone', ''))
+
+    if not numero_os.startswith('OS-') and numero_os.isdigit():
+        numero_os = f"OS-{numero_os}"
+
+    if len(digitos_telefone) < 4:
+        return jsonify({
+            "sucesso": False,
+            "mensagem": "Por favor, informe os 4 últimos dígitos do telefone do cliente."
+        })
+
+    os_item = OrdemServico.query.filter_by(codigo=numero_os).first()
+
+    if os_item:
+        telefone_cadastrado_limpo = apenas_numeros(os_item.telefone)
+        ultimos_4_cadastrados = telefone_cadastrado_limpo[-4:] if len(telefone_cadastrado_limpo) >= 4 else ""
+        ultimos_4_digitados = digitos_telefone[-4:]
+
+        if ultimos_4_cadastrados and ultimos_4_digitados == ultimos_4_cadastrados:
+            return jsonify({
+                "sucesso": True,
+                "mensagem": f"Aparelho: {os_item.aparelho} | Status: {os_item.status} | Valor: {os_item.valor}"
+            })
+        else:
+            return jsonify({
+                "sucesso": False,
+                "mensagem": "Os 4 últimos dígitos do telefone não conferem com esta OS."
+            })
+    else:
+        return jsonify({
+            "sucesso": False,
+            "mensagem": "Ordem de Serviço não encontrada. Verifique os dados digitados."
+        })
+
+
+@app.route('/api/alterar-senha', methods=['POST'])
+def alterar_senha():
+    if not session.get('tecnico_logado'):
+        return jsonify({"sucesso": False, "mensagem": "Acesso não autorizado."}), 403
+
+    dados = request.get_json()
+    senha_atual = dados.get('senha_atual')
+    nova_senha = dados.get('nova_senha')
+
+    tecnico = Tecnico.query.first()
+    if not tecnico:
+        tecnico = Tecnico(senha="1234")
+        db.session.add(tecnico)
+
+    if senha_atual != tecnico.senha:
+        return jsonify({"sucesso": False, "mensagem": "A senha atual está incorreta."})
+
+    if not nova_senha or len(nova_senha.strip()) < 3:
+        return jsonify({"sucesso": False, "mensagem": "A nova senha deve ter pelo menos 3 caracteres."})
+
+    tecnico.senha = nova_senha.strip()
+    db.session.commit()
+
+    return jsonify({"sucesso": True, "mensagem": "Senha alterada com sucesso!"})
+
+
+if __name__ == '__main__':
+    app.run(debug=True)

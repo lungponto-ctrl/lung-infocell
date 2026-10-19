@@ -6,18 +6,22 @@ from flask_sqlalchemy import SQLAlchemy
 app = Flask(__name__)
 app.secret_key = 'chave_secreta_lung_infocell'
 
-# Configuração robusta da Base de Dados (Usa PostgreSQL na nuvem do Render ou SQLite local)
+# Configuração ultra-segura da Base de Dados
 database_url = os.environ.get("DATABASE_URL")
+
 if database_url:
-    # Correção segura para o formato de URL do Postgres no SQLAlchemy moderno
+    # Remove espaços em branco ou aspas acidentais que possam vir do painel do Render
+    database_url = database_url.strip().strip('"').strip("'")
+
+    # Corrige o prefixo antigo se necessário
     if database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql://", 1)
+
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///lung_infocell.db'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
 db = SQLAlchemy(app)
 
 

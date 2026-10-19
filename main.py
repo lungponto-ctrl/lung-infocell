@@ -7,9 +7,21 @@ app = Flask(__name__)
 app.secret_key = 'chave_secreta_lung_infocell'
 
 # Configuração ultra-segura da Base de Dados
+# Configuração da Base de Dados com driver explícito para o psycopg2
 database_url = os.environ.get("DATABASE_URL")
 
 if database_url:
+    database_url = database_url.strip().strip('"').strip("'")
+
+    # Força o uso do driver psycopg2 instalado no requirements.txt
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql+psycopg2://", 1)
+    elif database_url.startswith("postgresql://"):
+        database_url = database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+else:
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///lung_infocell.db'
     # Remove espaços em branco ou aspas acidentais que possam vir do painel do Render
     database_url = database_url.strip().strip('"').strip("'")
 

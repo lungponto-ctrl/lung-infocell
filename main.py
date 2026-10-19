@@ -6,17 +6,9 @@ from flask_sqlalchemy import SQLAlchemy
 app = Flask(__name__)
 app.secret_key = 'chave_secreta_lung_infocell'
 
-# Configuração da URL do Banco de Dados (Supabase / Render)
-# O '@' da senha '30515657Lu.@' foi substituído por '%40' para evitar conflito na URL
-db_url = os.environ.get('DATABASE_URL', '')
-
-if not db_url:
-    db_url = 'postgresql+psycopg2://postgres:30515657Lu.%40@db.kuavbwwvjrnygegwnein.supabase.co:5432/postgres'
-
-if db_url.startswith("postgres://"):
-    db_url = db_url.replace("postgres://", "postgresql+psycopg2://", 1)
-elif db_url.startswith("postgresql://") and "+psycopg2" not in db_url:
-    db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+# Configuração fixa e segura da URL do Banco de Dados (Supabase)
+# O caractere especial '@' da senha foi codificado como '%40' para evitar erros de leitura no host
+db_url = 'postgresql+psycopg2://postgres:30515657Lu.%40@db.kuavbwwvjrnygegwnein.supabase.co:5432/postgres'
 
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False

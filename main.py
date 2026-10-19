@@ -6,8 +6,16 @@ from flask_sqlalchemy import SQLAlchemy
 app = Flask(__name__)
 app.secret_key = 'chave_secreta_lung_infocell'
 
-# Configuração com SQLite para garantir 100% de estabilidade no Render
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///lung_infocell.db'
+# Configuração da Base de Dados (Usa PostgreSQL na nuvem do Render se disponível, ou SQLite localmente)
+database_url = os.environ.get("DATABASE_URL")
+if database_url:
+    # Correção para o formato de URL do Postgres no SQLAlchemy moderno se necessário
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+else:
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///lung_infocell.db'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -43,7 +51,7 @@ class OrdemServico(db.Model):
     valor = db.Column(db.String(50), nullable=False, default="A definir")
 
 
-# Criar tabelas e registro inicial
+# Criar tabelas e registo inicial
 with app.app_context():
     db.create_all()
     if not Tecnico.query.first():
@@ -212,20 +220,17 @@ def atualizar_status_os():
 def consultar_os():
     dados = request.get_json() or {}
 
-    # Suporta campos 'numero_os' / 'codigo_os' e 'digitos_telefone' / 'telefone'
     numero_os = str(dados.get('numero_os') or dados.get('codigo_os') or '').strip().upper()
     digitos_telefone = apenas_numeros(dados.get('digitos_telefone') or dados.get('telefone') or '')
 
     if not numero_os:
         return jsonify({"sucesso": False, "mensagem": "Por favor, informe o número da OS."})
 
-    # Adiciona o prefixo OS- se o usuário digitou apenas números (ex: 1025 -> OS-1025)
     if not numero_os.startswith('OS-') and numero_os.isdigit():
         numero_os_formatado = f"OS-{numero_os}"
     else:
         numero_os_formatado = numero_os
 
-    # Busca no banco pelo código formatado ou pelo digitado
     os_item = OrdemServico.query.filter(
         (OrdemServico.codigo == numero_os_formatado) | (OrdemServico.codigo == numero_os)
     ).first()
@@ -236,7 +241,6 @@ def consultar_os():
             "mensagem": "Ordem de Serviço não encontrada. Verifique o número digitado."
         })
 
-    # Validação do telefone
     if len(digitos_telefone) < 4:
         return jsonify({
             "sucesso": False,

@@ -65,23 +65,6 @@
         </div>
     </section>
 
-    <!-- Consulta de Ordem de Serviço (OS) -->
-    <section id="consultar-os" class="info-section" style="background-color: var(--bg-card); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);">
-        <div style="max-width: 600px; margin: 0 auto; text-align: center;">
-            <h2 style="margin-bottom: 0.5rem;"><i class="fa-solid fa-magnifying-glass"></i> Consultar Ordem de Serviço</h2>
-            <p style="color: var(--text-gray); margin-bottom: 1.5rem;">Digite o código da sua OS (ex: OS-1024) para verificar o status do seu aparelho.</p>
-
-            <div style="display: flex; gap: 10px;">
-                <input type="text" id="inputConsultaOS" placeholder="Ex: OS-1024 ou 1024" style="flex: 1; padding: 0.9rem; background-color: var(--bg-main); color: white; border: 1px solid var(--border-color); border-radius: 5px; font-size: 1rem; text-transform: uppercase;">
-                <button onclick="consultarOSCliente()" class="btn-red" style="padding: 0 1.5rem; white-space: nowrap;">
-                    <i class="fa-solid fa-search"></i> Consultar
-                </button>
-            </div>
-
-            <div id="resultadoConsulta" style="margin-top: 20px; padding: 15px; border-radius: 6px; display: none; font-weight: 500;"></div>
-        </div>
-    </section>
-
     <!-- Formulário de Orçamento -->
     <section id="orcamento" class="info-section">
         <div style="max-width: 600px; margin: 0 auto;">
@@ -97,6 +80,58 @@
             </form>
         </div>
     </section>
+
+<div class="consulta-container">
+    <h3>🔍 Consultar Estado da Ordem de Serviço</h3>
+    <p class="instrucoes">
+        Para consultar o andamento do seu reparo, digite o número da sua <strong>OS</strong> e os <strong>4 últimos dígitos do seu telefone</strong> cadastrado.
+    </p>
+
+    <div class="form-group">
+        <label for="consulta-os">Número da OS:</label>
+        <input type="text" id="consulta-os" placeholder="Ex: 1025 ou OS-1025" required>
+    </div>
+
+    <div class="form-group">
+        <label for="consulta-telefone">Últimos 4 dígitos do seu Telefone:</label>
+        <input type="text" id="consulta-telefone" placeholder="Ex: 8888" maxlength="4" required>
+    </div>
+
+    <button type="button" class="btn-consultar" onclick="buscarOS()">Consultar Status</button>
+</div>
+
+<script>
+function buscarOS() {
+    const os = document.getElementById('consulta-os').value.trim();
+    const digitos = document.getElementById('consulta-telefone').value.trim();
+
+    if (!os) {
+        alert("Por favor, digite o número da Ordem de Serviço.");
+        return;
+    }
+
+    if (!digitos || digitos.length < 4) {
+        alert("Por favor, digite os 4 últimos dígitos do seu telefone.");
+        return;
+    }
+
+    fetch('/api/consultar-os', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            numero_os: os,
+            digitos_telefone: digitos
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.mensagem);
+    })
+    .catch(err => {
+        alert("Erro ao consultar a OS. Tente novamente mais tarde.");
+    });
+}
+</script>
 
     <!-- Informações e Localização -->
     <section id="contacto" class="info-section" style="background-color: var(--bg-main);">

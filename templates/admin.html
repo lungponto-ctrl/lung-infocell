@@ -265,32 +265,29 @@
             }
         }
 
-        function enviarWhatsAppOS(codigo, telefone, cliente, aparelho, status, valor, defeito) {
-            let numeroLimpo = telefone.replace(/\D/g, '');
+        function enviarWhatsApp(os, cliente, telefone, aparelho, defeito, status) {
+    const linkSite = "https://lung-infocell.onrender.com";
 
-            if (!numeroLimpo.startsWith('55')) {
-                numeroLimpo = '55' + numeroLimpo;
-            }
+    const mensagem = `📱 *LUNG INFOCELL - Ordem de Serviço*\n` +
+        `-----------------------------------\n` +
+        `Olá, *${cliente}*!\n` +
+        `Sua Ordem de Serviço foi gerada com sucesso.\n\n` +
+        `📋 *OS:* ${os}\n` +
+        `🔧 *Aparelho:* ${aparelho}\n` +
+        `🛠️ *Defeito:* ${defeito}\n` +
+        `📌 *Status:* ${status}\n\n` +
+        `🔍 *Como acompanhar o status do seu aparelho:*\n` +
+        `Acesse: ${linkSite}\n` +
+        `1. Digite o número da sua OS (*${os}*)\n` +
+        `2. Digite os *4 últimos dígitos do seu telefone*\n\n` +
+        `Qualquer dúvida, estamos à disposição! 🚀`;
 
-            const linkSite = "https://lung-infocell.onrender.com/";
+    // Remove caracteres não numéricos do telefone do cliente para o link do WhatsApp
+    const telLimpo = telefone.replace(/\D/g, '');
+    const url = `https://api.whatsapp.com/send?phone=55${telLimpo}&text=${encodeURIComponent(mensagem)}`;
 
-            let mensagem = `*🛠️ LUNG INFOCELL - CANHOTO DE OS*\n\n`;
-            mensagem += `Olá *${cliente}*, aqui está o resumo da sua Ordem de Serviço:\n\n`;
-            mensagem += `📌 *Código:* ${codigo}\n`;
-            mensagem += `📱 *Aparelho:* ${aparelho}\n`;
-            mensagem += `🔧 *Defeito:* ${defeito}\n`;
-            mensagem += `💰 *Valor:* ${valor}\n`;
-            mensagem += `🔄 *Status Atual:* *${status}*\n\n`;
-            mensagem += `----------------------------------------\n`;
-            mensagem += `🔍 *COMO CONSULTAR O STATUS DA SUA OS:*\n`;
-            mensagem += `1️⃣ Acesse o nosso site: ${linkSite}\n`;
-            mensagem += `2️⃣ Role até a secção *Consultar Ordem de Serviço*\n`;
-            mensagem += `3️⃣ Digite o seu código (*${codigo}* ou apenas o número) e clique em Consultar!\n\n`;
-            mensagem += `Obrigado pela preferência e confiança na Lung InfoCell! 🚀`;
-
-            const urlWhatsApp = `https://api.whatsapp.com/send?phone=${numeroLimpo}&text=${encodeURIComponent(mensagem)}`;
-            window.open(urlWhatsApp, '_blank');
-        }
+    window.open(url, '_blank');
+}
     </script>
 </body>
 </html>

@@ -1,4 +1,5 @@
 import os
+import re
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 
@@ -7,9 +8,8 @@ app.secret_key = 'chave_secreta_lung_infocell'
 
 # Configuração da URL do Banco de Dados (Supabase / Render)
 db_url = os.environ.get('DATABASE_URL',
-                        'postgresql://postgres:suasenha@db.kuavbwwvjrnygegwnein.supabase.co:5432/postgres')
+                        'postgresql://postgres:@30515657Lu.@db.kuavbwwvjrnygegwnein.supabase.co:5432/postgres')
 
-# Ajuste necessário caso a URL comece com postgres:// (padrão SQLAlchemy exige postgresql://)
 if db_url and db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 
@@ -17,6 +17,13 @@ app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+
+
+# Função auxiliar para extrair apenas os dígitos numéricos
+def apenas_numeros(texto):
+    if not texto:
+        return ""
+    return re.sub(r'\D', '', str(texto))
 
 
 # --- MODELOS DO BANCO DE DADOS ---
@@ -37,12 +44,12 @@ class OrdemServico(db.Model):
     aparelho = db.Column(db.String(100), nullable=False)
     defeito = db.Column(db.String(200), nullable=False)
     relatorio = db.Column(db.Text, nullable=True)
-    avarias = db.Column(db.Text, nullable=True)  # Salvo como texto separado por vírgulas
+    avarias = db.Column(db.Text, nullable=True)
     status = db.Column(db.String(50), nullable=False, default="Em Análise Técnica")
     valor = db.Column(db.String(50), nullable=False, default="A definir")
 
 
-# Criar tabelas e registo inicial de senha se não existirem
+# Criar tabelas e registo inicial
 with app.app_context():
     db.create_all()
     if not Tecnico.query.first():
@@ -86,7 +93,6 @@ def admin():
     if not session.get('tecnico_logado'):
         return redirect(url_for('login'))
 
-    # Carregar todas as Ordens de Serviço do banco de dados
     ordens_bd = OrdemServico.query.order_by(OrdemServico.id.desc()).all()
     ordens_dict = {}
     for os_item in ordens_bd:
@@ -112,7 +118,6 @@ def criar_os():
 
     dados = request.get_json()
 
-    # Gerar código da OS sequencial baseado no total do BD
     total_os = OrdemServico.query.count()
     codigo_os = f"OS-{1025 + total_os}"
 
@@ -164,20 +169,38 @@ def atualizar_status_os():
 def consultar_os():
     dados = request.get_json()
     numero_os = dados.get('numero_os', '').strip().upper()
+    digitos_telefone = apenas_numeros(dados.get('digitos_telefone', ''))
 
     if not numero_os.startswith('OS-') and numero_os.isdigit():
         numero_os = f"OS-{numero_os}"
 
-    os_item = OrdemServico.query.filter_by(codigo=numero_os).first()
-    if os_item:
+    if len(digitos_telefone) < 4:
         return jsonify({
-            "sucesso": True,
-            "mensagem": f"Aparelho: {os_item.aparelho} | Status: {os_item.status} | Valor: {os_item.valor}"
+            "sucesso": False,
+            "mensagem": "Por favor, informe os 4 últimos dígitos do telefone do cliente."
         })
+
+    os_item = OrdemServico.query.filter_by(codigo=numero_os).first()
+
+    if os_item:
+        telefone_cadastrado_limpo = apenas_numeros(os_item.telefone)
+        ultimos_4_cadastrados = telefone_cadastrado_limpo[-4:] if len(telefone_cadastrado_limpo) >= 4 else ""
+        ultimos_4_digitados = digitos_telefone[-4:]
+
+        if ultimos_4_cadastrados and ultimos_4_digitados == ultimos_4_cadastrados:
+            return jsonify({
+                "sucesso": True,
+                "mensagem": f"Aparelho: {os_item.aparelho} | Status: {os_item.status} | Valor: {os_item.valor}"
+            })
+        else:
+            return jsonify({
+                "sucesso": False,
+                "mensagem": "Os 4 últimos dígitos do telefone não conferem com esta OS."
+            })
     else:
         return jsonify({
             "sucesso": False,
-            "mensagem": "Ordem de Serviço não encontrada. Verifique o número digitado."
+            "mensagem": "Ordem de Serviço não encontrada. Verifique os dados digitados."
         })
 
 
@@ -204,7 +227,7 @@ def alterar_senha():
     tecnico.senha = nova_senha.strip()
     db.session.commit()
 
-    return jsonify({"sucesso": True, "mensagem": "Senha alterada e salva no banco de dados com sucesso!"})
+    return jsonify({"sucesso": True, "mensagem": "Senha alterada com sucesso!"})
 
 
 if __name__ == '__main__':

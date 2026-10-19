@@ -1,28 +1,57 @@
+import os
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 app.secret_key = 'chave_secreta_lung_infocell'
 
-# Senha inicial do técnico (pode ser alterada direto pelo painel admin)
-SENHA_TECNICO = "1234"
+# Configuração da URL do Banco de Dados (Supabase / Render)
+db_url = os.environ.get('DATABASE_URL',
+                        'postgresql://postgres:suasenha@db.kuavbwwvjrnygegwnein.supabase.co:5432/postgres')
 
-# Banco de dados simulado de Ordens de Serviço (OS)
-ORDENS_DE_SERVICO = {
-    "OS-1024": {
-        "cliente": "João Silva",
-        "telefone": "(31) 99999-1111",
-        "endereco": "Rua das Flores, 123 - Betim",
-        "aparelho": "iPhone 11",
-        "defeito": "Tela quebrada",
-        "relatorio": "Necessária troca de frontal display completa.",
-        "avarias": ["Tela trincada / arranhada", "Marcas na carcaça"],
-        "status": "Aguardando Peça",
-        "valor": "R$ 350,00"
-    }
-}
+# Ajuste necessário caso a URL comece com postgres:// (padrão SQLAlchemy exige postgresql://)
+if db_url and db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
 
-contador_os = 1025
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+db = SQLAlchemy(app)
+
+
+# --- MODELOS DO BANCO DE DADOS ---
+
+class Tecnico(db.Model):
+    __tablename__ = 'tecnicos'
+    id = db.Column(db.Integer, primary_key=True)
+    senha = db.Column(db.String(100), nullable=False, default="1234")
+
+
+class OrdemServico(db.Model):
+    __tablename__ = 'ordens_servico'
+    id = db.Column(db.Integer, primary_key=True)
+    codigo = db.Column(db.String(20), unique=True, nullable=False)
+    cliente = db.Column(db.String(100), nullable=False)
+    telefone = db.Column(db.String(30), nullable=False)
+    endereco = db.Column(db.String(200), nullable=False)
+    aparelho = db.Column(db.String(100), nullable=False)
+    defeito = db.Column(db.String(200), nullable=False)
+    relatorio = db.Column(db.Text, nullable=True)
+    avarias = db.Column(db.Text, nullable=True)  # Salvo como texto separado por vírgulas
+    status = db.Column(db.String(50), nullable=False, default="Em Análise Técnica")
+    valor = db.Column(db.String(50), nullable=False, default="A definir")
+
+
+# Criar tabelas e registo inicial de senha se não existirem
+with app.app_context():
+    db.create_all()
+    if not Tecnico.query.first():
+        tecnico_padrao = Tecnico(senha="1234")
+        db.session.add(tecnico_padrao)
+        db.session.commit()
+
+
+# --- ROTAS PRINCIPAIS ---
 
 @app.route('/')
 def home():
@@ -34,7 +63,10 @@ def login():
     erro = None
     if request.method == 'POST':
         senha_digitada = request.form.get('senha')
-        if senha_digitada == SENHA_TECNICO:
+        tecnico = Tecnico.query.first()
+        senha_atual = tecnico.senha if tecnico else "1234"
+
+        if senha_digitada == senha_atual:
             session['tecnico_logado'] = True
             return redirect(url_for('admin'))
         else:
@@ -53,7 +85,24 @@ def logout():
 def admin():
     if not session.get('tecnico_logado'):
         return redirect(url_for('login'))
-    return render_template('admin.html', ordens=ORDENS_DE_SERVICO)
+
+    # Carregar todas as Ordens de Serviço do banco de dados
+    ordens_bd = OrdemServico.query.order_by(OrdemServico.id.desc()).all()
+    ordens_dict = {}
+    for os_item in ordens_bd:
+        ordens_dict[os_item.codigo] = {
+            "cliente": os_item.cliente,
+            "telefone": os_item.telefone,
+            "endereco": os_item.endereco,
+            "aparelho": os_item.aparelho,
+            "defeito": os_item.defeito,
+            "relatorio": os_item.relatorio,
+            "avarias": os_item.avarias.split(", ") if os_item.avarias else [],
+            "status": os_item.status,
+            "valor": os_item.valor
+        }
+
+    return render_template('admin.html', ordens=ordens_dict)
 
 
 @app.route('/api/criar-os', methods=['POST'])
@@ -61,28 +110,34 @@ def criar_os():
     if not session.get('tecnico_logado'):
         return jsonify({"sucesso": False, "mensagem": "Acesso não autorizado."}), 403
 
-    global contador_os
     dados = request.get_json()
 
-    codigo_os = f"OS-{contador_os}"
+    # Gerar código da OS sequencial baseado no total do BD
+    total_os = OrdemServico.query.count()
+    codigo_os = f"OS-{1025 + total_os}"
 
-    ORDENS_DE_SERVICO[codigo_os] = {
-        "cliente": dados.get('cliente'),
-        "telefone": dados.get('telefone'),
-        "endereco": dados.get('endereco'),
-        "aparelho": dados.get('aparelho'),
-        "defeito": dados.get('defeito'),
-        "relatorio": dados.get('relatorio'),
-        "avarias": dados.get('avarias', []),
-        "status": dados.get('status', 'Em Análise Técnica'),
-        "valor": dados.get('valor', 'A definir')
-    }
+    avarias_lista = dados.get('avarias', [])
+    avarias_str = ", ".join(avarias_lista) if isinstance(avarias_lista, list) else str(avarias_lista)
 
-    contador_os += 1
+    nova_os = OrdemServico(
+        codigo=codigo_os,
+        cliente=dados.get('cliente'),
+        telefone=dados.get('telefone'),
+        endereco=dados.get('endereco'),
+        aparelho=dados.get('aparelho'),
+        defeito=dados.get('defeito'),
+        relatorio=dados.get('relatorio'),
+        avarias=avarias_str,
+        status=dados.get('status', 'Em Análise Técnica'),
+        valor=dados.get('valor', 'A definir')
+    )
+
+    db.session.add(nova_os)
+    db.session.commit()
 
     return jsonify({
         "sucesso": True,
-        "mensagem": "Ordem de Serviço criada com sucesso!",
+        "mensagem": "Ordem de Serviço salva no banco de dados com sucesso!",
         "codigo_os": codigo_os
     })
 
@@ -96,8 +151,10 @@ def atualizar_status_os():
     codigo_os = dados.get('codigo_os')
     novo_status = dados.get('novo_status')
 
-    if codigo_os in ORDENS_DE_SERVICO:
-        ORDENS_DE_SERVICO[codigo_os]['status'] = novo_status
+    os_item = OrdemServico.query.filter_by(codigo=codigo_os).first()
+    if os_item:
+        os_item.status = novo_status
+        db.session.commit()
         return jsonify({"sucesso": True, "mensagem": f"Status da {codigo_os} atualizado para: {novo_status}"})
     else:
         return jsonify({"sucesso": False, "mensagem": "OS não encontrada."}), 404
@@ -111,11 +168,11 @@ def consultar_os():
     if not numero_os.startswith('OS-') and numero_os.isdigit():
         numero_os = f"OS-{numero_os}"
 
-    if numero_os in ORDENS_DE_SERVICO:
-        info = ORDENS_DE_SERVICO[numero_os]
+    os_item = OrdemServico.query.filter_by(codigo=numero_os).first()
+    if os_item:
         return jsonify({
             "sucesso": True,
-            "mensagem": f"Aparelho: {info['aparelho']} | Status: {info['status']} | Valor: {info['valor']}"
+            "mensagem": f"Aparelho: {os_item.aparelho} | Status: {os_item.status} | Valor: {os_item.valor}"
         })
     else:
         return jsonify({
@@ -129,19 +186,25 @@ def alterar_senha():
     if not session.get('tecnico_logado'):
         return jsonify({"sucesso": False, "mensagem": "Acesso não autorizado."}), 403
 
-    global SENHA_TECNICO
     dados = request.get_json()
     senha_atual = dados.get('senha_atual')
     nova_senha = dados.get('nova_senha')
 
-    if senha_atual != SENHA_TECNICO:
+    tecnico = Tecnico.query.first()
+    if not tecnico:
+        tecnico = Tecnico(senha="1234")
+        db.session.add(tecnico)
+
+    if senha_atual != tecnico.senha:
         return jsonify({"sucesso": False, "mensagem": "A senha atual está incorreta."})
 
     if not nova_senha or len(nova_senha.strip()) < 3:
         return jsonify({"sucesso": False, "mensagem": "A nova senha deve ter pelo menos 3 caracteres."})
 
-    SENHA_TECNICO = nova_senha.strip()
-    return jsonify({"sucesso": True, "mensagem": "Senha alterada com sucesso!"})
+    tecnico.senha = nova_senha.strip()
+    db.session.commit()
+
+    return jsonify({"sucesso": True, "mensagem": "Senha alterada e salva no banco de dados com sucesso!"})
 
 
 if __name__ == '__main__':

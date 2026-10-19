@@ -7,10 +7,13 @@ app = Flask(__name__)
 app.secret_key = 'chave_secreta_lung_infocell'
 
 # Configuração da URL do Banco de Dados (Supabase / Render)
-db_url = os.environ.get('DATABASE_URL',
-                        'postgresql://postgres:@30515657Lu.@db.kuavbwwvjrnygegwnein.supabase.co:5432/postgres')
+db_url = os.environ.get('DATABASE_URL', '')
 
-if db_url and db_url.startswith("postgres://"):
+if not db_url:
+    db_url = 'postgresql://postgres:@30515657Lu.@db.kuavbwwvjrnygegwnein.supabase.co:5432/postgres'
+
+# Ajuste para garantir compatibilidade do SQLAlchemy com PostgreSQL
+if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
@@ -19,7 +22,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 
-# Função auxiliar para extrair apenas os dígitos numéricos
+# Função auxiliar para extrair apenas dígitos numéricos
 def apenas_numeros(texto):
     if not texto:
         return ""
@@ -177,58 +180,4 @@ def consultar_os():
     if len(digitos_telefone) < 4:
         return jsonify({
             "sucesso": False,
-            "mensagem": "Por favor, informe os 4 últimos dígitos do telefone do cliente."
-        })
-
-    os_item = OrdemServico.query.filter_by(codigo=numero_os).first()
-
-    if os_item:
-        telefone_cadastrado_limpo = apenas_numeros(os_item.telefone)
-        ultimos_4_cadastrados = telefone_cadastrado_limpo[-4:] if len(telefone_cadastrado_limpo) >= 4 else ""
-        ultimos_4_digitados = digitos_telefone[-4:]
-
-        if ultimos_4_cadastrados and ultimos_4_digitados == ultimos_4_cadastrados:
-            return jsonify({
-                "sucesso": True,
-                "mensagem": f"Aparelho: {os_item.aparelho} | Status: {os_item.status} | Valor: {os_item.valor}"
-            })
-        else:
-            return jsonify({
-                "sucesso": False,
-                "mensagem": "Os 4 últimos dígitos do telefone não conferem com esta OS."
-            })
-    else:
-        return jsonify({
-            "sucesso": False,
-            "mensagem": "Ordem de Serviço não encontrada. Verifique os dados digitados."
-        })
-
-
-@app.route('/api/alterar-senha', methods=['POST'])
-def alterar_senha():
-    if not session.get('tecnico_logado'):
-        return jsonify({"sucesso": False, "mensagem": "Acesso não autorizado."}), 403
-
-    dados = request.get_json()
-    senha_atual = dados.get('senha_atual')
-    nova_senha = dados.get('nova_senha')
-
-    tecnico = Tecnico.query.first()
-    if not tecnico:
-        tecnico = Tecnico(senha="1234")
-        db.session.add(tecnico)
-
-    if senha_atual != tecnico.senha:
-        return jsonify({"sucesso": False, "mensagem": "A senha atual está incorreta."})
-
-    if not nova_senha or len(nova_senha.strip()) < 3:
-        return jsonify({"sucesso": False, "mensagem": "A nova senha deve ter pelo menos 3 caracteres."})
-
-    tecnico.senha = nova_senha.strip()
-    db.session.commit()
-
-    return jsonify({"sucesso": True, "mensagem": "Senha alterada com sucesso!"})
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
+            "mensagem": "Por

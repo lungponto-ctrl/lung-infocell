@@ -81,60 +81,35 @@
         </div>
     </section>
 
-<div class="consulta-container">
-    <h3>🔍 Consultar Estado da Ordem de Serviço</h3>
-    <p class="instrucoes">
-        Para consultar o andamento do seu reparo, digite o número da sua <strong>OS</strong> e os <strong>4 últimos dígitos do seu telefone</strong> cadastrado.
-    </p>
+    <!-- Seção de Consulta de OS -->
+    <section id="consultar-os" class="info-section" style="background-color: var(--bg-main);">
+        <div class="consulta-container" style="max-width: 600px; margin: 0 auto; background: var(--bg-card); padding: 2rem; border-radius: 8px; border: 1px solid var(--border-color);">
+            <h3 style="margin-bottom: 0.5rem; text-align: center;"><i class="fa-solid fa-magnifying-glass"></i> Consultar Estado da OS</h3>
+            <p class="instrucoes" style="color: var(--text-gray); font-size: 0.9rem; text-align: center; margin-bottom: 1.5rem;">
+                Digite o número da sua <strong>OS</strong> e os <strong>4 últimos dígitos do seu telefone</strong> cadastrado.
+            </p>
 
-    <div class="form-group">
-        <label for="consulta-os">Número da OS:</label>
-        <input type="text" id="consulta-os" placeholder="Ex: 1025 ou OS-1025" required>
-    </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label for="consulta-os" style="display: block; margin-bottom: 5px; color: var(--text-gray);">Número da OS:</label>
+                <input type="text" id="consulta-os" placeholder="Ex: 1025 ou OS-1025" required style="width: 100%; padding: 0.8rem; background-color: var(--bg-main); color: white; border: 1px solid var(--border-color); border-radius: 5px;">
+            </div>
 
-    <div class="form-group">
-        <label for="consulta-telefone">Últimos 4 dígitos do seu Telefone:</label>
-        <input type="text" id="consulta-telefone" placeholder="Ex: 8888" maxlength="4" required>
-    </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label for="consulta-telefone" style="display: block; margin-bottom: 5px; color: var(--text-gray);">Últimos 4 dígitos do seu Telefone:</label>
+                <input type="text" id="consulta-telefone" placeholder="Ex: 8479" maxlength="4" required style="width: 100%; padding: 0.8rem; background-color: var(--bg-main); color: white; border: 1px solid var(--border-color); border-radius: 5px;">
+            </div>
 
-    <button type="button" class="btn-consultar" onclick="buscarOS()">Consultar Status</button>
-</div>
+            <button type="button" class="btn-red" onclick="buscarOS()" style="width: 100%; justify-content: center; padding: 0.8rem; cursor: pointer;">
+                Consultar Status
+            </button>
 
-<script>
-function buscarOS() {
-    const os = document.getElementById('consulta-os').value.trim();
-    const digitos = document.getElementById('consulta-telefone').value.trim();
-
-    if (!os) {
-        alert("Por favor, digite o número da Ordem de Serviço.");
-        return;
-    }
-
-    if (!digitos || digitos.length < 4) {
-        alert("Por favor, digite os 4 últimos dígitos do seu telefone.");
-        return;
-    }
-
-    fetch('/api/consultar-os', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            numero_os: os,
-            digitos_telefone: digitos
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        alert(data.mensagem);
-    })
-    .catch(err => {
-        alert("Erro ao consultar a OS. Tente novamente mais tarde.");
-    });
-}
-</script>
+            <!-- Caixa de Resultado da Consulta -->
+            <div id="resultadoConsulta" style="display: none; margin-top: 20px; padding: 15px; border-radius: 5px; font-weight: 500; text-align: center;"></div>
+        </div>
+    </section>
 
     <!-- Informações e Localização -->
-    <section id="contacto" class="info-section" style="background-color: var(--bg-main);">
+    <section id="contacto" class="info-section">
         <div class="info-grid">
             <div class="info-card">
                 <i class="fa-solid fa-location-dot"></i>
@@ -165,44 +140,53 @@ function buscarOS() {
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 
     <script>
-        async function consultarOSCliente() {
-            const numeroOS = document.getElementById('inputConsultaOS').value.trim();
+        function buscarOS() {
+            const os = document.getElementById('consulta-os').value.trim();
+            const digitos = document.getElementById('consulta-telefone').value.trim();
             const divResultado = document.getElementById('resultadoConsulta');
 
-            if (!numeroOS) {
-                alert("Por favor, digite o número da OS.");
+            divResultado.style.display = 'none';
+
+            if (!os) {
+                alert("Por favor, digite o número da Ordem de Serviço.");
                 return;
             }
 
-            try {
-                const resposta = await fetch('/api/consultar-os', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ numero_os: numeroOS })
-                });
+            if (!digitos || digitos.length < 4) {
+                alert("Por favor, digite os 4 últimos dígitos do seu telefone.");
+                return;
+            }
 
-                const resultado = await resposta.json();
-
+            fetch('/api/consultar-os', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    numero_os: os,
+                    digitos_telefone: digitos
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
                 divResultado.style.display = 'block';
-
-                if (resultado.sucesso) {
+                if (data.sucesso) {
                     divResultado.style.backgroundColor = 'rgba(37, 211, 102, 0.15)';
                     divResultado.style.color = '#25d366';
                     divResultado.style.border = '1px solid #25d366';
-                    divResultado.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${resultado.mensagem}`;
+                    divResultado.innerHTML = `<i class="fa-solid fa-circle-check"></i> <strong>Resultado:</strong><br>${data.mensagem}`;
                 } else {
                     divResultado.style.backgroundColor = 'rgba(229, 9, 20, 0.15)';
                     divResultado.style.color = 'var(--primary-red)';
                     divResultado.style.border = '1px solid var(--primary-red)';
-                    divResultado.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ${resultado.mensagem}`;
+                    divResultado.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ${data.mensagem}`;
                 }
-            } catch (erro) {
-                console.error("Erro ao consultar OS:", erro);
+            })
+            .catch(err => {
                 divResultado.style.display = 'block';
                 divResultado.style.backgroundColor = 'rgba(229, 9, 20, 0.15)';
                 divResultado.style.color = 'var(--primary-red)';
-                divResultado.innerHTML = "Ocorreu um erro ao consultar. Tente novamente.";
-            }
+                divResultado.style.border = '1px solid var(--primary-red)';
+                divResultado.innerHTML = "Erro ao conectar com o servidor. Tente novamente.";
+            });
         }
     </script>
 </body>

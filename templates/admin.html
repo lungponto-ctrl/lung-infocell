@@ -34,6 +34,39 @@
             border-radius: 4px;
             font-size: 0.85rem;
         }
+
+        /* Modal Popup de Edição */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal-content {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            color: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
     </style>
 </head>
 <body style="padding: 2rem 5%;">
@@ -124,7 +157,7 @@
 
             <div id="listaOS">
                 {% for codigo, info in ordens.items() %}
-                <div class="card-os" style="background-color: var(--bg-main); padding: 1.2rem; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 12px;">
+                <div class="card-os" id="card-{{ codigo }}" style="background-color: var(--bg-main); padding: 1.2rem; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 12px;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <strong class="codigo-os" style="color: var(--primary-red); font-size: 1.1rem;">{{ codigo }}</strong>
                         <span style="font-size: 0.85rem; background: rgba(229, 9, 20, 0.2); padding: 3px 8px; border-radius: 4px; color: var(--primary-red);">{{ info.status }}</span>
@@ -153,15 +186,71 @@
                         <button onclick="alterarStatus('{{ codigo }}')" class="btn-outline" style="padding: 0.3rem 0.7rem; font-size: 0.8rem;">
                             <i class="fa-solid fa-arrows-rotate"></i> Atualizar
                         </button>
-                        <button onclick="enviarWhatsAppOS('{{ codigo }}', '{{ info.telefone }}', '{{ info.cliente }}', '{{ info.aparelho }}', '{{ info.status }}', '{{ info.valor }}', '{{ info.defeito }}')" class="btn-red" style="padding: 0.3rem 0.7rem; font-size: 0.8rem; background-color: #25d366; border-color: #25d366;">
-                            <i class="fa-brands fa-whatsapp"></i> Enviar OS
+                        <button onclick="abrirModalEdicao('{{ codigo }}', {{ info | tojson }})" class="btn-outline" style="padding: 0.3rem 0.7rem; font-size: 0.8rem; border-color: #f39c12; color: #f39c12;">
+                            <i class="fa-solid fa-pen-to-square"></i> Editar
+                        </button>
+                        <button onclick="excluirOS('{{ codigo }}')" class="btn-outline" style="padding: 0.3rem 0.7rem; font-size: 0.8rem; border-color: #e74c3c; color: #e74c3c;">
+                            <i class="fa-solid fa-trash"></i> Excluir
+                        </button>
+                        <button onclick="enviarWhatsApp('{{ codigo }}', '{{ info.cliente }}', '{{ info.telefone }}', '{{ info.aparelho }}', '{{ info.defeito }}', '{{ info.status }}')" class="btn-red" style="padding: 0.3rem 0.7rem; font-size: 0.8rem; background-color: #25d366; border-color: #25d366;">
+                            <i class="fa-brands fa-whatsapp"></i> Enviar
                         </button>
                     </div>
                 </div>
+                {% else %}
+                <p style="color: var(--text-gray); text-align: center;">Nenhuma Ordem de Serviço cadastrada ainda.</p>
                 {% endfor %}
             </div>
         </div>
 
+    </div>
+
+    <!-- Modal Editar OS -->
+    <div id="modalEdicao" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitulo"><i class="fa-solid fa-pen-to-square" style="color: var(--primary-red);"></i> Editar Ordem de Serviço</h3>
+                <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 1.2rem;" onclick="fecharModalEdicao()"></i>
+            </div>
+            <form id="formEditarOS" onsubmit="salvarEdicaoOS(event)" style="display: flex; flex-direction: column; gap: 12px;">
+                <input type="hidden" id="edit_codigo">
+
+                <label style="font-size: 0.85rem; color: var(--text-gray);">Cliente:</label>
+                <input type="text" id="edit_cliente" required>
+
+                <label style="font-size: 0.85rem; color: var(--text-gray);">Telefone / WhatsApp:</label>
+                <input type="tel" id="edit_telefone" required>
+
+                <label style="font-size: 0.85rem; color: var(--text-gray);">Endereço:</label>
+                <input type="text" id="edit_endereco">
+
+                <label style="font-size: 0.85rem; color: var(--text-gray);">Aparelho:</label>
+                <input type="text" id="edit_aparelho" required>
+
+                <label style="font-size: 0.85rem; color: var(--text-gray);">Defeito Relatado:</label>
+                <input type="text" id="edit_defeito">
+
+                <label style="font-size: 0.85rem; color: var(--text-gray);">Relatório Técnico:</label>
+                <textarea id="edit_relatorio" rows="3" style="padding: 0.8rem; background-color: var(--bg-main); color: white; border: 1px solid var(--border-color); border-radius: 5px;"></textarea>
+
+                <label style="font-size: 0.85rem; color: var(--text-gray);">Valor:</label>
+                <input type="text" id="edit_valor">
+
+                <label style="font-size: 0.85rem; color: var(--text-gray);">Status:</label>
+                <select id="edit_status" style="padding: 0.8rem; background-color: var(--bg-main); color: white; border: 1px solid var(--border-color); border-radius: 5px;">
+                    <option value="Em Análise Técnica">Em Análise Técnica</option>
+                    <option value="Aguardando Peça">Aguardando Peça</option>
+                    <option value="Em Manutenção">Em Manutenção</option>
+                    <option value="Pronto para Retirada">Pronto para Retirada</option>
+                    <option value="Entregue / Concluído">Entregue / Concluído</option>
+                </select>
+
+                <div style="display: flex; gap: 10px; margin-top: 15px; justify-content: flex-end;">
+                    <button type="button" class="btn-outline" onclick="fecharModalEdicao()">Cancelar</button>
+                    <button type="submit" class="btn-red"><i class="fa-solid fa-save"></i> Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script>
@@ -236,6 +325,70 @@
             }
         }
 
+        function abrirModalEdicao(codigo, info) {
+            document.getElementById('edit_codigo').value = codigo;
+            document.getElementById('modalTitulo').innerHTML = `<i class="fa-solid fa-pen-to-square" style="color: var(--primary-red);"></i> Editar ${codigo}`;
+            document.getElementById('edit_cliente').value = info.cliente || '';
+            document.getElementById('edit_telefone').value = info.telefone || '';
+            document.getElementById('edit_endereco').value = info.endereco || '';
+            document.getElementById('edit_aparelho').value = info.aparelho || '';
+            document.getElementById('edit_defeito').value = info.defeito || '';
+            document.getElementById('edit_relatorio').value = info.relatorio || '';
+            document.getElementById('edit_valor').value = info.valor || '';
+            document.getElementById('edit_status').value = info.status || 'Em Análise Técnica';
+
+            document.getElementById('modalEdicao').style.display = 'flex';
+        }
+
+        function fecharModalEdicao() {
+            document.getElementById('modalEdicao').style.display = 'none';
+        }
+
+        async function salvarEdicaoOS(event) {
+            event.preventDefault();
+            const codigo = document.getElementById('edit_codigo').value;
+            const dados = {
+                codigo_os: codigo,
+                cliente: document.getElementById('edit_cliente').value,
+                telefone: document.getElementById('edit_telefone').value,
+                endereco: document.getElementById('edit_endereco').value,
+                aparelho: document.getElementById('edit_aparelho').value,
+                defeito: document.getElementById('edit_defeito').value,
+                relatorio: document.getElementById('edit_relatorio').value,
+                status: document.getElementById('edit_status').value,
+                valor: document.getElementById('edit_valor').value
+            };
+
+            const resposta = await fetch('/api/editar-os', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+
+            const resultado = await resposta.json();
+            alert(resultado.mensagem);
+            if (resultado.sucesso) {
+                location.reload();
+            }
+        }
+
+        async function excluirOS(codigo) {
+            if (confirm(`Tem certeza de que deseja excluir a ${codigo}?`)) {
+                const resposta = await fetch('/api/excluir-os', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ codigo_os: codigo })
+                });
+
+                const resultado = await resposta.json();
+                alert(resultado.mensagem);
+                if (resultado.sucesso) {
+                    const card = document.getElementById(`card-${codigo}`);
+                    if (card) card.remove();
+                }
+            }
+        }
+
         async function alterarSenhaAdmin(event) {
             event.preventDefault();
 
@@ -266,28 +419,27 @@
         }
 
         function enviarWhatsApp(os, cliente, telefone, aparelho, defeito, status) {
-    const linkSite = "https://lung-infocell.onrender.com";
+            const linkSite = "https://lung-infocell.onrender.com";
 
-    const mensagem = `📱 *LUNG INFOCELL - Ordem de Serviço*\n` +
-        `-----------------------------------\n` +
-        `Olá, *${cliente}*!\n` +
-        `Sua Ordem de Serviço foi gerada com sucesso.\n\n` +
-        `📋 *OS:* ${os}\n` +
-        `🔧 *Aparelho:* ${aparelho}\n` +
-        `🛠️ *Defeito:* ${defeito}\n` +
-        `📌 *Status:* ${status}\n\n` +
-        `🔍 *Como acompanhar o status do seu aparelho:*\n` +
-        `Acesse: ${linkSite}\n` +
-        `1. Digite o número da sua OS (*${os}*)\n` +
-        `2. Digite os *4 últimos dígitos do seu telefone*\n\n` +
-        `Qualquer dúvida, estamos à disposição! 🚀`;
+            const mensagem = `📱 *LUNG INFOCELL - Ordem de Serviço*\n` +
+                `-----------------------------------\n` +
+                `Olá, *${cliente}*!\n` +
+                `Sua Ordem de Serviço foi gerada com sucesso.\n\n` +
+                `📋 *OS:* ${os}\n` +
+                `🔧 *Aparelho:* ${aparelho}\n` +
+                `🛠️ *Defeito:* ${defeito}\n` +
+                `📌 *Status:* ${status}\n\n` +
+                `🔍 *Como acompanhar o status do seu aparelho:*\n` +
+                `Acesse: ${linkSite}\n` +
+                `1. Digite o número da sua OS (*${os}*)\n` +
+                `2. Digite os *4 últimos dígitos do seu telefone*\n\n` +
+                `Qualquer dúvida, estamos à disposição! 🚀`;
 
-    // Remove caracteres não numéricos do telefone do cliente para o link do WhatsApp
-    const telLimpo = telefone.replace(/\D/g, '');
-    const url = `https://api.whatsapp.com/send?phone=55${telLimpo}&text=${encodeURIComponent(mensagem)}`;
+            const telLimpo = telefone.replace(/\D/g, '');
+            const url = `https://api.whatsapp.com/send?phone=55${telLimpo}&text=${encodeURIComponent(mensagem)}`;
 
-    window.open(url, '_blank');
-}
+            window.open(url, '_blank');
+        }
     </script>
 </body>
 </html>

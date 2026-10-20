@@ -392,15 +392,24 @@ def criar_os():
         return jsonify({"sucesso": False,
                         "mensagem": "Preencha todos os campos obrigatórios (Cliente, Telefone, Aparelho e Defeito)."}), 400
 
-    # Conta apenas as OS desta empresa específica para o número ser sequencial e único por loja
-    total_os_empresa = OrdemServico.query.filter_by(empresa_id=empresa_id).count()
-    proximo_id = total_os_empresa + 1
-    codigo_os = f"OS-{1025 + proximo_id}"
+    # Busca a última OS cadastrada DESSA EMPRESA específica para pegar o número mais alto com segurança
+    ultima_os_empresa = OrdemServico.query.filter_by(empresa_id=empresa_id).order_by(OrdemServico.id.desc()).first()
 
-    # Garante que, se houver qualquer duplicado por coincidência, incrementa até achar um livre
+    if ultima_os_empresa and ultima_os_empresa.codigo.startswith('OS-'):
+        try:
+            num_atual = int(ultima_os_empresa.codigo.replace('OS-', ''))
+            proximo_num = num_atual + 1
+        except ValueError:
+            proximo_num = 1026
+    else:
+        proximo_num = 1026
+
+    codigo_os = f"OS-{proximo_num}"
+
+    # Loop de segurança extrema caso o número já exista por algum motivo na base
     while OrdemServico.query.filter_by(empresa_id=empresa_id, codigo=codigo_os).first():
-        proximo_id += 1
-        codigo_os = f"OS-{1025 + proximo_id}"
+        proximo_num += 1
+        codigo_os = f"OS-{proximo_num}"
 
     avarias_lista = dados.get('avarias', [])
     avarias_str = ", ".join(avarias_lista) if isinstance(avarias_lista, list) else str(avarias_lista)

@@ -108,7 +108,6 @@ class OrdemServico(db.Model):
 with app.app_context():
     db.create_all()
 
-    # Adiciona colunas em falta com segurança no PostgreSQL usando IF NOT EXISTS
     colunas_migrar = [
         ("empresas", "ativo", "BOOLEAN DEFAULT 0"),
         ("tecnicos", "empresa_id", "INTEGER DEFAULT 1"),

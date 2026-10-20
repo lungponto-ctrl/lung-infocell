@@ -108,23 +108,26 @@ class OrdemServico(db.Model):
 with app.app_context():
     db.create_all()
 
-    try:
-        db.session.execute(db.text("ALTER TABLE empresas ADD COLUMN ativo BOOLEAN DEFAULT 0"))
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
+    # Adiciona colunas em falta com segurança no PostgreSQL usando IF NOT EXISTS
+    colunas_migrar = [
+        ("empresas", "ativo", "BOOLEAN DEFAULT 0"),
+        ("tecnicos", "empresa_id", "INTEGER DEFAULT 1"),
+        ("tecnicos", "usuario", "VARCHAR(50) DEFAULT 'admin'"),
+        ("ordens_servico", "empresa_id", "INTEGER DEFAULT 1"),
+        ("ordens_servico", "relatorio", "TEXT"),
+        ("ordens_servico", "avarias", "TEXT"),
+        ("ordens_servico", "status", "VARCHAR(50) DEFAULT 'Em Análise Técnica'"),
+        ("ordens_servico", "valor", "VARCHAR(50) DEFAULT 'A definir'"),
+        ("clientes", "empresa_id", "INTEGER DEFAULT 1"),
+        ("clientes", "endereco", "VARCHAR(200)")
+    ]
 
-    try:
-        db.session.execute(db.text("ALTER TABLE tecnicos ADD COLUMN empresa_id INTEGER DEFAULT 1"))
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-    try:
-        db.session.execute(db.text("ALTER TABLE tecnicos ADD COLUMN usuario VARCHAR(50) DEFAULT 'admin'"))
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
+    for tabela, coluna, tipo in colunas_migrar:
+        try:
+            db.session.execute(db.text(f"ALTER TABLE {tabela} ADD COLUMN IF NOT EXISTS {coluna} {tipo}"))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
 
     empresa_padrao = Empresa.query.filter_by(id=1).first()
     if not empresa_padrao:
@@ -146,9 +149,12 @@ with app.app_context():
             empresa_padrao.ativo = True
             db.session.commit()
 
-    tecnico = Tecnico.query.first()
+    tecnico = Tecnico.query.filter_by(empresa_id=1).first()
     if not tecnico:
         db.session.add(Tecnico(empresa_id=1, usuario="admin", senha="Admin@2026"))
+        db.session.commit()
+    else:
+        tecnico.senha = "Admin@2026"
         db.session.commit()
 
 

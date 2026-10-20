@@ -379,31 +379,49 @@ def salvar_ou_atualizar_cliente(empresa_id, nome, telefone, endereco):
 def criar_os():
     if not session.get('tecnico_logado'):
         return jsonify({"sucesso": False, "mensagem": "Acesso não autorizado."}), 403
-    empresa_id = session.get('empresa_id', 1)
-    dados = request.get_json()
 
-    total_os = OrdemServico.query.filter_by(empresa_id=empresa_id).count()
-    codigo_os = f"OS-{1025 + total_os}"
-    avarias_lista = dados.get('avarias', [])
-    avarias_str = ", ".join(avarias_lista) if isinstance(avarias_lista, list) else str(avarias_lista)
+    empresa_id = session.get('empresa_id', 1)
+    dados = request.get_json() or {}
 
     nome_cliente = dados.get('cliente')
     tel_cliente = dados.get('telefone')
-    end_cliente = dados.get('endereco')
+    aparelho = dados.get('aparelho')
+    defeito = dados.get('defeito')
 
-    nova_os = OrdemServico(
-        empresa_id=empresa_id, codigo=codigo_os, cliente=nome_cliente,
-        telefone=tel_cliente, endereco=end_cliente,
-        aparelho=dados.get('aparelho'), defeito=dados.get('defeito'),
-        relatorio=dados.get('relatorio'), avarias=avarias_str,
-        status=dados.get('status', 'Em Análise Técnica'), valor=dados.get('valor', 'A definir')
-    )
-    db.session.add(nova_os)
-    db.session.commit()
+    if not nome_cliente or not tel_cliente or not aparelho or not defeito:
+        return jsonify({"sucesso": False,
+                        "mensagem": "Preencha todos os campos obrigatórios (Cliente, Telefone, Aparelho e Defeito)."}), 400
 
-    salvar_ou_atualizar_cliente(empresa_id, nome_cliente, tel_cliente, end_cliente)
+    total_os = OrdemServico.query.filter_by(empresa_id=empresa_id).count()
+    codigo_os = f"OS-{1025 + total_os}"
 
-    return jsonify({"sucesso": True, "mensagem": "Ordem de Serviço salva com sucesso!", "codigo_os": codigo_os})
+    avarias_lista = dados.get('avarias', [])
+    avarias_str = ", ".join(avarias_lista) if isinstance(avarias_lista, list) else str(avarias_lista)
+    end_cliente = dados.get('endereco', '')
+
+    try:
+        nova_os = OrdemServico(
+            empresa_id=empresa_id,
+            codigo=codigo_os,
+            cliente=nome_cliente,
+            telefone=tel_cliente,
+            endereco=end_cliente,
+            aparelho=aparelho,
+            defeito=defeito,
+            relatorio=dados.get('relatorio', ''),
+            avarias=avarias_str,
+            status=dados.get('status', 'Em Análise Técnica'),
+            valor=dados.get('valor', 'A definir')
+        )
+        db.session.add(nova_os)
+        db.session.commit()
+
+        salvar_ou_atualizar_cliente(empresa_id, nome_cliente, tel_cliente, end_cliente)
+
+        return jsonify({"sucesso": True, "mensagem": "Ordem de Serviço salva com sucesso!", "codigo_os": codigo_os})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"sucesso": False, "mensagem": f"Erro ao criar OS no banco de dados: {str(e)}"}), 500
 
 
 @app.route('/api/consultar-os', methods=['POST'])

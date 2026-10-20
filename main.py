@@ -392,8 +392,15 @@ def criar_os():
         return jsonify({"sucesso": False,
                         "mensagem": "Preencha todos os campos obrigatórios (Cliente, Telefone, Aparelho e Defeito)."}), 400
 
-    total_os = OrdemServico.query.filter_by(empresa_id=empresa_id).count()
-    codigo_os = f"OS-{1025 + total_os}"
+    # Gera um código único baseado no ID máximo atual para nunca repetir
+    ultima_os = OrdemServico.query.filter_by(empresa_id=empresa_id).order_by(OrdemServico.id.desc()).first()
+    proximo_id = (ultima_os.id + 1) if ultima_os else 1
+    codigo_os = f"OS-{1025 + proximo_id}"
+
+    # Garantir que o código gerado é único na base
+    while OrdemServico.query.filter_by(empresa_id=empresa_id, codigo=codigo_os).first():
+        proximo_id += 1
+        codigo_os = f"OS-{1025 + proximo_id}"
 
     avarias_lista = dados.get('avarias', [])
     avarias_str = ", ".join(avarias_lista) if isinstance(avarias_lista, list) else str(avarias_lista)

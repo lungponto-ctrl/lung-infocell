@@ -114,6 +114,18 @@ with app.app_context():
     except Exception:
         db.session.rollback()
 
+    try:
+        db.session.execute(db.text("ALTER TABLE tecnicos ADD COLUMN empresa_id INTEGER DEFAULT 1"))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    try:
+        db.session.execute(db.text("ALTER TABLE tecnicos ADD COLUMN usuario VARCHAR(50) DEFAULT 'admin'"))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
     empresa_padrao = Empresa.query.filter_by(id=1).first()
     if not empresa_padrao:
         empresa_padrao = Empresa(
@@ -499,7 +511,6 @@ def mudar_senha():
 
 @app.route('/super-admin', methods=['GET', 'POST'])
 def super_admin():
-    # Lê a senha mestre de uma variável de ambiente ou usa a padrão segura
     SUPER_SENHA_MESTRE = os.environ.get("SUPER_ADMIN_SENHA", "Pro@2026Master!")
     if request.method == 'POST':
         if request.form.get('senha_mestre') == SUPER_SENHA_MESTRE:

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criar Minha Assistência - BancadaPro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #121212; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 30px; }
+        .cadastro-container { background: #1e1e1e; padding: 40px; border-radius: 12px; width: 100%; max-width: 550px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); border-top: 4px solid #ff3b30; }
+        .cadastro-container h2 { text-align: center; margin-bottom: 8px; font-size: 26px; }
+        .cadastro-container p.sub { text-align: center; color: #aaa; font-size: 14px; margin-bottom: 20px; }
+
+        .preco-box { background: linear-gradient(135deg, #2a2a2a, #1a1a1a); border: 2px solid #ff3b30; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 25px; }
+        .preco-box .plano-nome { font-size: 15px; color: #aaa; text-transform: uppercase; font-weight: bold; }
+        .preco-box .plano-valor { font-size: 32px; font-weight: bold; color: #ffcc00; margin: 5px 0; }
+        .preco-box .plano-detalhes { font-size: 13px; color: #ccc; }
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 6px; font-size: 13px; color: #ccc; font-weight: bold; }
+        .form-group input { width: 100%; padding: 12px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        .form-group input:focus { border-color: #ff3b30; outline: none; }
+
+        /* Caixa de Requisitos de Senha Estilizada */
+        .requisitos-senha { background: #252525; border-left: 3px solid #ffcc00; padding: 10px 12px; border-radius: 4px; margin-top: 6px; font-size: 12px; color: #ccc; line-height: 1.5; }
+        .requisitos-senha strong { color: #ffcc00; }
+
+        .pagamento-aviso { background: #252525; border: 1px dashed #ff3b30; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-size: 13px; color: #ddd; line-height: 1.5; }
+        .pagamento-aviso strong { color: #ffcc00; }
+
+        .btn-cadastrar { background: #ff3b30; color: #fff; border: none; padding: 14px; width: 100%; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; transition: filter 0.3s; }
+        .btn-cadastrar:hover { filter: brightness(0.85); }
+        .login-link { display: block; text-align: center; margin-top: 20px; color: #aaa; text-decoration: none; font-size: 14px; }
+        .login-link:hover { color: #fff; }
+    </style>
+</head>
+<body>
+
+    <div class="cadastro-container">
+        <h2>🚀 Bancada<span style="color: #ff3b30;">Pro</span></h2>
+        <p class="sub">Sistema Completo para Gestão de Assistências Técnicas</p>
+
+        <div class="preco-box">
+            <div class="plano-nome">Plano Profissional Lojista</div>
+            <div class="plano-valor">R$ 49,90 <span style="font-size: 15px; color: #aaa;">/ mês</span></div>
+            <div class="plano-detalhes">Painel de OS próprio + Link exclusivo para clientes + WhatsApp automatizado</div>
+        </div>
+
+        <div class="pagamento-aviso">
+            <i class="fa-solid fa-circle-info" style="color: #ff3b30;"></i> <strong>Como funciona a ativação:</strong> Preencha os dados abaixo. O acesso completo será liberado após a confirmação do pagamento da mensalidade pela nossa administração.
+        </div>
+
+        <form id="formCadastroLoja">
+            <div class="form-group">
+                <label>Nome da Assistência</label>
+                <input type="text" id="nome" placeholder="ex: Central Celulares" required>
+            </div>
+            <div class="form-group">
+                <label>Identificador no Site (Slug ex: central-celulares)</label>
+                <input type="text" id="slug" placeholder="ex: central-celulares" required>
+            </div>
+            <div class="form-group">
+                <label>WhatsApp da Loja</label>
+                <input type="text" id="telefone" placeholder="ex: 31999998888" required>
+            </div>
+            <div class="form-group">
+                <label>Endereço Completo</label>
+                <input type="text" id="endereco" placeholder="Rua, Número, Bairro, Cidade" required>
+            </div>
+            <div class="form-group">
+                <label>Cor Principal da Marca</label>
+                <input type="color" id="cor_primaria" value="#ff3b30" style="width: 100%; height: 40px; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; cursor: pointer; padding: 2px;">
+            </div>
+
+            <div class="form-group">
+                <label style="margin-bottom: 8px;">Serviços Prestados:</label>
+                <div style="display: flex; flex-direction: column; gap: 6px; background: #2a2a2a; padding: 10px; border-radius: 6px; border: 1px solid #444;">
+                    <label style="font-weight: normal; font-size: 13px; display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="checkbox" name="servico" value="tela_bateria" checked> Troca de Tela & Bateria</label>
+                    <label style="font-weight: normal; font-size: 13px; display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="checkbox" name="servico" value="conector" checked> Conector de Carga</label>
+                    <label style="font-weight: normal; font-size: 13px; display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="checkbox" name="servico" value="computadores" checked> Conserto de Computadores</label>
+                    <label style="font-weight: normal; font-size: 13px; display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="checkbox" name="servico" value="acessorios" checked> Acessórios & Carregadores</label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Senha de Acesso do Técnico</label>
+                <input type="password" id="senha_tecnico" placeholder="Digite uma senha forte" required>
+                <div class="requisitos-senha">
+                    <strong>Requisitos de Segurança da Senha:</strong>
+                    <ul style="margin-left: 16px; margin-top: 4px;">
+                        <li>Mínimo de <strong>8 caracteres</strong></li>
+                        <li>Pelo menos uma letra <strong>MAIÚSCULA</strong> (ex: A, B, C)</li>
+                        <li>Pelo menos uma letra <strong>minúscula</strong> (ex: a, b, c)</li>
+                        <li>Pelo menos um <strong>número</strong> (ex: 1, 2, 3)</li>
+                        <li>Pelo menos um <strong>caractere especial</strong> (ex: <code>@</code>, <code>#</code>, <code>$</code>, <code>!</code>, <code>%</code>, <code>&</code>, <code>*</code>)</li>
+                    </ul>
+                    <div style="margin-top: 4px; color: #ffcc00;">Exemplo válido: <code>Tecnico@2026!</code></div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-cadastrar">Criar Minha Conta (R$ 49,90/mês)</button>
+        </form>
+
+        <a href="{{ url_for('login') }}" class="login-link"><i class="fa-solid fa-arrow-left"></i> Já tem conta? Ir para o Login</a>
+    </div>
+
+    <script>
+        document.getElementById('formCadastroLoja').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const servicosSelecionados = [];
+            document.querySelectorAll('input[name="servico"]:checked').forEach(cb => servicosSelecionados.push(cb.value));
+
+            const dados = {
+                nome: document.getElementById('nome').value,
+                slug: document.getElementById('slug').value,
+                telefone: document.getElementById('telefone').value,
+                endereco: document.getElementById('endereco').value,
+                cor_primaria: document.getElementById('cor_primaria').value,
+                servicos: servicosSelecionados,
+                senha_tecnico: document.getElementById('senha_tecnico').value
+            };
+
+            const resp = await fetch('/cadastro', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+
+            const res = await resp.json();
+            alert(res.mensagem);
+            if (res.sucesso) {
+                window.location.href = '/loja/' + res.slug;
+            }
+        });
+    </script>
+</body>
+</html>

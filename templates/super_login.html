@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Master - BancadaPro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- ESTILOS ISOLADOS PARA O SUPER ADMIN -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .super-login-card {
+            background-color: #1e1e1e;
+            padding: 40px 30px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            border-top: 4px solid #ff3b30;
+            text-align: center;
+        }
+
+        .super-login-card i.main-icon {
+            font-size: 48px;
+            color: #ff3b30;
+            margin-bottom: 15px;
+        }
+
+        .super-login-card h2 {
+            font-size: 26px;
+            color: #ffffff;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        .super-login-card p.sub-title {
+            color: #888888;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .form-group-super {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group-super label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #cccccc;
+            font-weight: 600;
+        }
+
+        .form-group-super input {
+            width: 100%;
+            padding: 12px 15px;
+            background-color: #2a2a2a;
+            border: 1px solid #444444;
+            color: #ffffff;
+            border-radius: 6px;
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group-super input:focus {
+            border-color: #ff3b30;
+            outline: none;
+        }
+
+        .btn-super-submit {
+            background-color: #ff3b30;
+            color: #ffffff;
+            border: none;
+            padding: 14px;
+            width: 100%;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-super-submit:hover {
+            background-color: #e03126;
+        }
+
+        .btn-super-submit:active {
+            transform: scale(0.98);
+        }
+
+        .erro-msg-super {
+            background-color: #3a1e1e;
+            color: #ff3b30;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ff3b30;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .voltar-link-super {
+            display: inline-block;
+            margin-top: 25px;
+            color: #888888;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .voltar-link-super:hover {
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="super-login-card">
+        <i class="fa-solid fa-shield-halved main-icon"></i>
+        <h2>Bancada<span style="color: #ff3b30;">Pro</span></h2>
+        <p class="sub-title">Painel Master do SaaS</p>
+
+        {% if erro %}
+        <div class="erro-msg-super">
+            <i class="fa-solid fa-triangle-exclamation"></i> {{ erro }}
+        </div>
+        {% endif %}
+
+        <form method="POST">
+            <div class="form-group-super">
+                <label>Senha Mestre do Sistema</label>
+                <input type="password" name="senha_mestre" placeholder="Digite a senha mestre..." required autofocus>
+            </div>
+            <button type="submit" class="btn-super-submit">
+                <i class="fa-solid fa-right-to-bracket"></i> Aceder Painel Master
+            </button>
+        </form>
+
+        <a href="{{ url_for('home') }}" class="voltar-link-super">
+            <i class="fa-solid fa-arrow-left"></i> Voltar para o site principal
+        </a>
+    </div>
+
+</body>
+</html>

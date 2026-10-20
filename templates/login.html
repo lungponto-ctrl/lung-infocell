@@ -1,39 +1,132 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acesso Restrito - Lung InfoCell</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Login Técnico - {{ empresa.nome }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Cor dinâmica da loja na página de login -->
+    <style>
+        :root {
+            --cor-primaria: {{ empresa.cor_primaria if empresa and empresa.cor_primaria else '#ff3b30' }};
+        }
+        body {
+            background-color: #121212;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-card {
+            background-color: #1e1e1e;
+            padding: 40px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            border-top: 4px solid var(--cor-primaria);
+            text-align: center;
+        }
+        .login-card i.main-icon {
+            font-size: 40px;
+            color: var(--cor-primaria);
+            margin-bottom: 20px;
+        }
+        .login-card h2 {
+            margin-bottom: 10px;
+            font-size: 22px;
+            color: #fff;
+        }
+        .login-card p {
+            color: #aaa;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #ccc;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            background-color: #2a2a2a;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 6px;
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+        .form-group input:focus {
+            border-color: var(--cor-primaria);
+            outline: none;
+        }
+        .btn-login {
+            background-color: var(--cor-primaria);
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: filter 0.3s;
+        }
+        .btn-login:hover {
+            filter: brightness(0.85);
+        }
+        .erro-msg {
+            background-color: #3a1e1e;
+            color: #ff3b30;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 15px;
+            border-left: 3px solid #ff3b30;
+            text-align: left;
+        }
+        .voltar-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #aaa;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+        .voltar-link:hover {
+            color: #fff;
+        }
+    </style>
 </head>
-<body style="display: flex; justify-content: center; align-items: center; min-height: 100vh;">
-
-    <div style="background-color: var(--bg-card); padding: 2.5rem; border-radius: 8px; border: 1px solid var(--border-color); width: 100%; max-width: 400px; text-align: center;">
-        <div class="logo" style="justify-content: center; margin-bottom: 1.5rem;">
-            <i class="fa-solid fa-microchip"></i>
-            <div>Lung <span>InfoCell</span></div>
-        </div>
-
-        <h3 style="margin-bottom: 1.5rem; color: var(--text-gray);"><i class="fa-solid fa-lock"></i> Área Restrita do Técnico</h3>
+<body>
+    <div class="login-card">
+        <i class="fa-solid fa-user-gear main-icon"></i>
+        <h2>Área do Técnico</h2>
+        <p>{{ empresa.nome }}</p>
 
         {% if erro %}
-            <div style="background-color: rgba(229, 9, 20, 0.2); color: var(--primary-red); padding: 10px; border-radius: 5px; margin-bottom: 15px; border: 1px solid var(--primary-red);">
-                {{ erro }}
-            </div>
+        <div class="erro-msg"><i class="fa-solid fa-triangle-exclamation"></i> {{ erro }}</div>
         {% endif %}
 
-        <form action="/login" method="POST" style="display: flex; flex-direction: column; gap: 15px;">
-            <input type="password" name="senha" placeholder="Digite a Senha de Acesso" required style="padding: 0.9rem; text-align: center; font-size: 1.1rem;">
-            <button type="submit" class="btn-red" style="justify-content: center; width: 100%;">
-                <i class="fa-solid fa-right-to-bracket"></i> Entrar no Painel
-            </button>
+        <form method="POST">
+            <div class="form-group">
+                <label>Senha de Acesso</label>
+                <input type="password" name="senha" placeholder="Insira a senha do técnico" required autofocus>
+            </div>
+            <button type="submit" class="btn-login">Entrar no Painel</button>
         </form>
 
-        <a href="/" style="display: block; margin-top: 20px; color: var(--text-gray); text-decoration: none; font-size: 0.9rem;">
-            ← Voltar ao Site Principal
-        </a>
+        <a href="{{ url_for('home_loja', slug=empresa.slug) if empresa else url_for('home') }}" class="voltar-link"><i class="fa-solid fa-arrow-left"></i> Voltar para a Loja</a>
     </div>
-
 </body>
 </html>

@@ -1,193 +1,170 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lung InfoCell - Assistência Técnica & Tecnologia</title>
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>{{ empresa.nome }} - Assistência Técnica</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- FORÇAR A COR DINÂMICA DA LOJA DIRETAMENTE NA PÁGINA -->
+    <style>
+        :root {
+            --cor-primaria: {{ empresa.cor_primaria if empresa and empresa.cor_primaria else '#ff3b30' }};
+        }
+        .header { border-bottom: 3px solid var(--cor-primaria) !important; }
+        .logo-icon, .hero-content .highlight, .service-card i { color: var(--cor-primaria) !important; }
+        .btn-primary, .btn-consultar { background-color: var(--cor-primaria) !important; }
+        .btn-primary:hover, .btn-consultar:hover { filter: brightness(0.85); }
+        .consult-card { border-top: 4px solid var(--cor-primaria) !important; }
+        .service-card:hover { border-color: var(--cor-primaria) !important; }
+    </style>
 </head>
 <body>
 
-    <!-- Header / Navbar -->
-    <header>
-        <div class="logo">
-            <i class="fa-solid fa-microchip"></i>
-            <div>Lung <span>InfoCell</span></div>
+    <!-- Cabeçalho Dinâmico -->
+    <header class="header">
+        <div class="logo-container">
+            <i class="fa-solid fa-microchip logo-icon"></i>
+            <h1>{{ empresa.nome }}</h1>
         </div>
-        <nav>
-            <ul>
-                <li><a href="#inicio">Início</a></li>
-                <li><a href="#servicos">Serviços</a></li>
-                <li><a href="#consultar-os">Consultar OS</a></li>
-                <li><a href="#orcamento">Orçamento</a></li>
-                <li><a href="#contacto">Contato</a></li>
-                <li><a href="/admin" style="color: var(--primary-red); font-weight: bold;"><i class="fa-solid fa-user-gear"></i> Área do Técnico</a></li>
-            </ul>
+        <nav class="nav-links">
+            <a href="#inicio">Início</a>
+            <a href="#servicos">Serviços</a>
+            <a href="#consultar">Consultar OS</a>
+            <a href="#contato">Contato</a>
+            <a href="{{ url_for('login') }}" class="btn-admin"><i class="fa-solid fa-user-gear"></i> Área do Técnico</a>
         </nav>
-        <a href="https://wa.me/5531972148479" target="_blank" class="btn-red">
+        <a href="https://wa.me/{{ empresa.telefone_whatsapp }}" target="_blank" class="btn-whatsapp">
             <i class="fa-brands fa-whatsapp"></i> WhatsApp
         </a>
     </header>
 
-    <!-- Hero Section -->
+    <!-- Secção Principal / Hero -->
     <section id="inicio" class="hero">
-        <h1>Assistência Técnica <span>Especializada</span></h1>
-        <p>Conserto de smartphones, iPhones, computadores e venda de acessórios em Betim.</p>
-        <a href="#orcamento" class="btn-red"><i class="fa-solid fa-calculator"></i> Pedir Orçamento</a>
+        <div class="hero-content">
+            <h2>Assistência Técnica <span class="highlight">Especializada</span></h2>
+            <p>Conserto de smartphones, iPhones, computadores e venda de acessórios de qualidade.</p>
+            <a href="#consultar" class="btn-primary"><i class="fa-solid fa-magnifying-glass"></i> Consultar Ordem de Serviço</a>
+        </div>
     </section>
 
-    <!-- Serviços -->
+    <!-- Secção de Serviços Dinâmica -->
     <section id="servicos" class="services">
-        <h2 style="text-align: center;">Nossos Serviços</h2>
+        <h3>Nossos Serviços</h3>
         <div class="services-grid">
-            <div class="card">
+            {% set lista_servicos = empresa.servicos.split(',') if empresa and empresa.servicos else ['tela_bateria', 'conector', 'computadores', 'acessorios'] %}
+
+            {% if 'tela_bateria' in lista_servicos %}
+            <div class="service-card">
                 <i class="fa-solid fa-mobile-screen-button"></i>
-                <h3>Troca de Tela & Bateria</h3>
+                <h4>Troca de Tela & Bateria</h4>
                 <p>Substituição rápida e garantida de telas quebradas e baterias viciadas para smartphones e iPhones.</p>
             </div>
-            <div class="card">
+            {% endif %}
+
+            {% if 'conector' in lista_servicos %}
+            <div class="service-card">
                 <i class="fa-solid fa-bolt"></i>
-                <h3>Conector de Carga</h3>
+                <h4>Conector de Carga</h4>
                 <p>Reparo e troca de conectores de carga/porta USB para aparelhos que não carregam.</p>
             </div>
-            <div class="card">
-                <i class="fa-solid fa-laptop-code"></i>
-                <h3>Conserto de Computadores</h3>
+            {% endif %}
+
+            {% if 'computadores' in lista_servicos %}
+            <div class="service-card">
+                <i class="fa-solid fa-laptop"></i>
+                <h4>Conserto de Computadores</h4>
                 <p>Formatação, limpeza preventiva, upgrade de SSD e manutenção de hardware.</p>
             </div>
-            <div class="card">
-                <i class="fa-solid fa-plug"></i>
-                <h3>Acessórios & Carregadores</h3>
+            {% endif %}
+
+            {% if 'acessorios' in lista_servicos %}
+            <div class="service-card">
+                <i class="fa-solid fa-headphones"></i>
+                <h4>Acessórios & Carregadores</h4>
                 <p>Capinhas, películas de proteção, cabos e acessórios de alta qualidade.</p>
             </div>
+            {% endif %}
         </div>
     </section>
 
-    <!-- Formulário de Orçamento -->
-    <section id="orcamento" class="info-section">
-        <div style="max-width: 600px; margin: 0 auto;">
-            <h2 style="text-align: center; margin-bottom: 1rem;">Solicite um Orçamento Rápido</h2>
-            <form id="contactForm" onsubmit="enviarMensagem(event)" style="display: flex; flex-direction: column; gap: 15px;">
-                <input type="text" id="nome" placeholder="Seu nome completo" required>
-                <input type="tel" id="telefone" placeholder="Seu telefone / WhatsApp" required>
-                <input type="text" id="aparelho" placeholder="Modelo do aparelho (ex: iPhone 11, Samsung A52)" required>
-                <textarea id="defeito" rows="4" placeholder="Descreva o problema ou o serviço desejado" required></textarea>
-                <button type="submit" class="btn-red" style="justify-content: center; width: 100%;">
-                    <i class="fa-brands fa-whatsapp"></i> Enviar Mensagem no WhatsApp
-                </button>
+    <!-- Secção de Consulta de OS -->
+    <section id="consultar" class="consult-section">
+        <div class="consult-card">
+            <h3>Consultar Andamento da Ordem de Serviço</h3>
+            <p>Insira o número da sua OS e os 4 últimos dígitos do seu telefone cadastrado:</p>
+
+            <form id="formConsultarOS">
+                <div class="input-group">
+                    <input type="text" id="numero_os" placeholder="Número da OS (ex: OS-1025)" required>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="telefone_cliente" placeholder="4 últimos dígitos do telefone" maxlength="4" required>
+                </div>
+                <button type="submit" class="btn-consultar">Consultar Aparelho</button>
             </form>
+
+            <div id="resultadoOS" class="resultado-box" style="display: none;">
+                <!-- O resultado da consulta aparece aqui via JavaScript -->
+            </div>
         </div>
     </section>
 
-    <!-- Seção de Consulta de OS -->
-    <section id="consultar-os" class="info-section" style="background-color: var(--bg-main);">
-        <div class="consulta-container" style="max-width: 600px; margin: 0 auto; background: var(--bg-card); padding: 2rem; border-radius: 8px; border: 1px solid var(--border-color);">
-            <h3 style="margin-bottom: 0.5rem; text-align: center;"><i class="fa-solid fa-magnifying-glass"></i> Consultar Estado da OS</h3>
-            <p class="instrucoes" style="color: var(--text-gray); font-size: 0.9rem; text-align: center; margin-bottom: 1.5rem;">
-                Digite o número da sua <strong>OS</strong> e os <strong>4 últimos dígitos do seu telefone</strong> cadastrado.
-            </p>
-
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label for="consulta-os" style="display: block; margin-bottom: 5px; color: var(--text-gray);">Número da OS:</label>
-                <input type="text" id="consulta-os" placeholder="Ex: 1025 ou OS-1025" required style="width: 100%; padding: 0.8rem; background-color: var(--bg-main); color: white; border: 1px solid var(--border-color); border-radius: 5px;">
-            </div>
-
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label for="consulta-telefone" style="display: block; margin-bottom: 5px; color: var(--text-gray);">Últimos 4 dígitos do seu Telefone:</label>
-                <input type="text" id="consulta-telefone" placeholder="Ex: 8479" maxlength="4" required style="width: 100%; padding: 0.8rem; background-color: var(--bg-main); color: white; border: 1px solid var(--border-color); border-radius: 5px;">
-            </div>
-
-            <button type="button" class="btn-red" onclick="buscarOS()" style="width: 100%; justify-content: center; padding: 0.8rem; cursor: pointer;">
-                Consultar Status
-            </button>
-
-            <!-- Caixa de Resultado da Consulta -->
-            <div id="resultadoConsulta" style="display: none; margin-top: 20px; padding: 15px; border-radius: 5px; font-weight: 500; text-align: center;"></div>
-        </div>
-    </section>
-
-    <!-- Informações e Localização -->
-    <section id="contacto" class="info-section">
-        <div class="info-grid">
-            <div class="info-card">
-                <i class="fa-solid fa-location-dot"></i>
-                <h3>Endereço</h3>
-                <p>Rua Olga Assunção, 1212</p>
-                <p>Bairro Novo Horizonte - Betim / MG</p>
-            </div>
-            <div class="info-card">
-                <i class="fa-solid fa-phone"></i>
-                <h3>Telefone / WhatsApp</h3>
-                <p>(31) 97214-8479</p>
-                <p>Atendimento rápido para orçamentos e dúvidas.</p>
-            </div>
-            <div class="info-card">
-                <i class="fa-solid fa-clock"></i>
-                <h3>Horário de Atendimento</h3>
-                <p>Segunda a Sexta: 08:00 - 18:00</p>
-                <p>Sábado: 08:00 - 12:00</p>
-            </div>
-        </div>
+    <!-- Secção de Contato -->
+    <section id="contato" class="contact-section">
+        <h3>Onde Estamos</h3>
+        <p><i class="fa-solid fa-location-dot"></i> {{ empresa.endereco }}</p>
+        <p><i class="fa-solid fa-phone"></i> WhatsApp: <a href="https://wa.me/{{ empresa.telefone_whatsapp }}" target="_blank" style="color: var(--cor-primaria); text-decoration: none;">{{ empresa.telefone_whatsapp }}</a></p>
     </section>
 
     <!-- Rodapé -->
     <footer>
-        <p>&copy; 2026 <span>Lung InfoCell</span> | Tel: (31) 97214-8479 | Rua Olga Assunção, 1212 - Novo Horizonte, Betim - MG. | <a href="/admin" style="color: var(--text-gray); text-decoration: underline;"><i class="fa-solid fa-lock"></i> Acesso Restrito</a></p>
+        <p>&copy; 2026 {{ empresa.nome }} - Powered by <strong>BancadaPro SaaS</strong></p>
     </footer>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
-
+    <!-- Script de Consulta de OS -->
     <script>
-        function buscarOS() {
-            const os = document.getElementById('consulta-os').value.trim();
-            const digitos = document.getElementById('consulta-telefone').value.trim();
-            const divResultado = document.getElementById('resultadoConsulta');
+        document.getElementById('formConsultarOS').addEventListener('submit', async function(e) {
+            e.preventDefault();
 
-            divResultado.style.display = 'none';
+            const numeroOs = document.getElementById('numero_os').value.trim();
+            const digitosTelefone = document.getElementById('telefone_cliente').value.trim();
+            const resultadoBox = document.getElementById('resultadoOS');
 
-            if (!os) {
-                alert("Por favor, digite o número da Ordem de Serviço.");
-                return;
-            }
+            try {
+                const resposta = await fetch('/api/consultar-os', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ numero_os: numeroOs, digitos_telefone: digitosTelefone })
+                });
 
-            if (!digitos || digitos.length < 4) {
-                alert("Por favor, digite os 4 últimos dígitos do seu telefone.");
-                return;
-            }
+                const dados = await resposta.json();
 
-            fetch('/api/consultar-os', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    numero_os: os,
-                    digitos_telefone: digitos
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                divResultado.style.display = 'block';
-                if (data.sucesso) {
-                    divResultado.style.backgroundColor = 'rgba(37, 211, 102, 0.15)';
-                    divResultado.style.color = '#25d366';
-                    divResultado.style.border = '1px solid #25d366';
-                    divResultado.innerHTML = `<i class="fa-solid fa-circle-check"></i> <strong>Resultado:</strong><br>${data.mensagem}`;
+                resultadoBox.style.display = 'block';
+                if (dados.sucesso) {
+                    resultadoBox.style.background = '#1e3a1e';
+                    resultadoBox.style.borderLeft = '4px solid #4cd964';
+                    resultadoBox.innerHTML = `
+                        <h4><i class="fa-solid fa-check-circle"></i> OS Encontrada: ${dados.codigo}</h4>
+                        <p><strong>Cliente:</strong> ${dados.cliente}</p>
+                        <p><strong>Aparelho:</strong> ${dados.aparelho}</p>
+                        <p><strong>Defeito:</strong> ${dados.defeito}</p>
+                        <p><strong>Status Atual:</strong> <span style="color: #ffcc00;">${dados.status}</span></p>
+                        <p><strong>Valor:</strong> ${dados.valor}</p>
+                        <p><strong>Relatório Técnico:</strong> ${dados.relatorio}</p>
+                    `;
                 } else {
-                    divResultado.style.backgroundColor = 'rgba(229, 9, 20, 0.15)';
-                    divResultado.style.color = 'var(--primary-red)';
-                    divResultado.style.border = '1px solid var(--primary-red)';
-                    divResultado.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ${data.mensagem}`;
+                    resultadoBox.style.background = '#3a1e1e';
+                    resultadoBox.style.borderLeft = '4px solid #ff3b30';
+                    resultadoBox.innerHTML = `<p><i class="fa-solid fa-triangle-exclamation"></i> ${dados.mensagem}</p>`;
                 }
-            })
-            .catch(err => {
-                divResultado.style.display = 'block';
-                divResultado.style.backgroundColor = 'rgba(229, 9, 20, 0.15)';
-                divResultado.style.color = 'var(--primary-red)';
-                divResultado.style.border = '1px solid var(--primary-red)';
-                divResultado.innerHTML = "Erro ao conectar com o servidor. Tente novamente.";
-            });
-        }
+            } catch (erro) {
+                resultadoBox.style.display = 'block';
+                resultadoBox.style.background = '#3a1e1e';
+                resultadoBox.innerHTML = `<p>Erro ao consultar. Tente novamente mais tarde.</p>`;
+            }
+        });
     </script>
 </body>
 </html>

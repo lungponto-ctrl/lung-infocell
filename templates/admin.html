@@ -1,294 +1,437 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Admin - Lung InfoCell</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Painel do Técnico - {{ empresa.nome }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <style>
-        .checklist-avarias {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            background: var(--bg-main);
-            padding: 12px;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
-        }
-        .checklist-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
-            color: var(--text-gray);
-        }
-        .checklist-item input {
-            width: auto !important;
-        }
-        .status-select {
-            padding: 0.4rem;
-            background-color: var(--bg-card);
-            color: white;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            font-size: 0.85rem;
-        }
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-        /* Modal Popup de Edição */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
+    <style>
+        :root {
+            --cor-primaria: {{ empresa.cor_primaria if empresa and empresa.cor_primaria else '#ff3b30' }};
+        }
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
             padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        .modal-content {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
+        .admin-header {
+            background: #1e1e1e;
+            padding: 20px 30px;
             border-radius: 8px;
-            padding: 2rem;
-            width: 100%;
-            max-width: 600px;
-            max-height: 90vh;
-            overflow-y: auto;
-            color: white;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-        }
-        .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 10px;
+            border-bottom: 4px solid var(--cor-primaria);
+            margin-bottom: 25px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
         }
+        .admin-header h2 { color: #fff; margin: 0; font-size: 22px; }
+        .admin-header p { color: #aaa; margin: 5px 0 0 0; font-size: 14px; }
+        .btn-acoes { display: flex; gap: 10px; }
+        .btn-acao {
+            background: #2a2a2a; color: #fff; border: 1px solid #444; padding: 10px 16px;
+            border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px;
+            display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.3s;
+        }
+        .btn-acao:hover { border-color: var(--cor-primaria); background: #333; }
+        .btn-sair { background: #3a1e1e; color: #ff3b30; border-color: #ff3b30; }
+        .btn-sair:hover { background: #ff3b30; color: #fff; }
+
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .kpi-card {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #2a2a2a;
+            border-left: 4px solid var(--cor-primaria);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .kpi-card h4 { margin: 0 0 8px 0; color: #aaa; font-size: 13px; text-transform: uppercase; }
+        .kpi-card .valor-kpi { font-size: 24px; font-weight: bold; color: #fff; }
+
+        .admin-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 25px;
+        }
+        @media (max-width: 900px) {
+            .admin-container { grid-template-columns: 1fr; }
+        }
+
+        .card-admin {
+            background: #1e1e1e;
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid #2a2a2a;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+        .card-admin h3 {
+            color: #fff; margin-top: 0; margin-bottom: 20px; font-size: 18px;
+            border-bottom: 1px solid #333; padding-bottom: 10px;
+        }
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 6px; font-size: 13px; color: #aaa; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 10px; background: #2a2a2a; border: 1px solid #444;
+            color: #fff; border-radius: 6px; font-size: 14px; box-sizing: border-box;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--cor-primaria); outline: none;
+        }
+
+        .checklist-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            background: #2a2a2a;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #444;
+        }
+        .checklist-item {
+            display: flex; align-items: center; gap: 8px; font-size: 13px; color: #ddd; cursor: pointer;
+        }
+        .checklist-item input[type="checkbox"] { width: auto; }
+
+        .btn-salvar {
+            background-color: var(--cor-primaria); color: white; border: none; padding: 12px;
+            width: 100%; border-radius: 6px; font-weight: bold; font-size: 15px; cursor: pointer;
+            transition: filter 0.3s; margin-top: 10px;
+        }
+        .btn-salvar:hover { filter: brightness(0.85); }
+        .btn-cancelar {
+            background: #555; color: #fff; border: none; padding: 8px; width: 100%;
+            border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 8px; display: none;
+        }
+
+        .search-box { position: relative; margin-bottom: 20px; }
+        .search-box input {
+            width: 100%; padding: 12px 15px 12px 40px; background: #252525; border: 1px solid #444;
+            color: #fff; border-radius: 6px; font-size: 14px; box-sizing: border-box;
+        }
+        .search-box input:focus { border-color: var(--cor-primaria); outline: none; }
+        .search-box i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #888; }
+
+        .os-lista-item {
+            background: #252525; padding: 18px; border-radius: 6px; margin-bottom: 15px;
+            border-left: 4px solid var(--cor-primaria);
+        }
+        .os-lista-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .os-detalhes p { margin: 4px 0; font-size: 13px; color: #bbb; }
+
+        .os-acoes { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+        .btn-os-editar { background: #f0ad4e; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .btn-os-editar:hover { background: #ec971f; }
+        .btn-os-excluir { background: #d9534f; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .btn-os-excluir:hover { background: #c9302c; }
+        .btn-os-whatsapp { background: #25d366; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-os-whatsapp:hover { background: #20ba5a; }
+
+        .requisitos-senha-admin { background: #252525; border-left: 3px solid #ffcc00; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 11px; color: #bbb; line-height: 1.4; }
     </style>
 </head>
-<body style="padding: 2rem 5%;">
+<body>
 
-    <header style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
-        <div class="logo">
-            <i class="fa-solid fa-microchip"></i>
-            <div>Lung <span>InfoCell - Painel do Técnico</span></div>
+    <div class="admin-header">
+        <div>
+            <h2><i class="fa-solid fa-wrench"></i> Painel do Técnico — {{ empresa.nome }}</h2>
+            <p><i class="fa-solid fa-location-dot"></i> {{ empresa.endereco }}</p>
         </div>
-        <div style="display: flex; gap: 15px;">
-            <a href="/" class="btn-outline">Voltar ao Site</a>
-            <a href="/logout" class="btn-red" style="padding: 0.5rem 1rem;"><i class="fa-solid fa-power-off"></i> Sair</a>
+        <div class="btn-acoes">
+            <a href="{{ url_for('home_loja', slug=empresa.slug) }}" target="_blank" class="btn-acao"><i class="fa-solid fa-store"></i> Ver Site da Loja</a>
+            <a href="{{ url_for('logout') }}" class="btn-acao btn-sair"><i class="fa-solid fa-right-from-bracket"></i> Sair</a>
         </div>
-    </header>
-
-    <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 30px;">
-
-        <!-- Coluna Esquerda: Criar OS + Alterar Senha -->
-        <div style="display: flex; flex-direction: column; gap: 20px;">
-
-            <!-- Formulário para Criar OS -->
-            <div style="background-color: var(--bg-card); padding: 2rem; border-radius: 8px; border: 1px solid var(--border-color);">
-                <h2 style="margin-bottom: 1.5rem;"><i class="fa-solid fa-plus-circle"></i> Nova Ordem de Serviço</h2>
-
-                <form id="formNovaOS" onsubmit="salvarOS(event)" style="display: flex; flex-direction: column; gap: 15px;">
-                    <input type="text" id="admin_cliente" placeholder="Nome do Cliente" required>
-                    <input type="tel" id="admin_telefone" placeholder="Telefone / WhatsApp" required>
-                    <input type="text" id="admin_endereco" placeholder="Endereço do Cliente (Rua, Bairro, Nº)" required>
-
-                    <input type="text" id="admin_aparelho" placeholder="Aparelho (ex: iPhone 11, Samsung A52)" required>
-                    <input type="text" id="admin_defeito" placeholder="Defeito relatado pelo cliente" required>
-
-                    <textarea id="admin_relatorio" rows="3" placeholder="Relatório Técnico / Observações da bancada..." style="padding: 0.8rem; background-color: var(--bg-main); color: white; border: 1px solid var(--border-color); border-radius: 5px;"></textarea>
-
-                    <label style="color: var(--text-gray); font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
-                        <i class="fa-solid fa-mobile-screen" style="color: var(--primary-red); font-size: 1.2rem;"></i> Checklist de Avarias / Estado do Aparelho:
-                    </label>
-                    <div class="checklist-avarias">
-                        <label class="checklist-item"><input type="checkbox" name="avaria" value="Tela trincada / arranhada"> Tela arranhada/trincada</label>
-                        <label class="checklist-item"><input type="checkbox" name="avaria" value="Marcas na carcaça"> Marcas na carcaça</label>
-                        <label class="checklist-item"><input type="checkbox" name="avaria" value="Tampa traseira quebrada"> Tampa traseira quebrada</label>
-                        <label class="checklist-item"><input type="checkbox" name="avaria" value="Lente da câmera trincada"> Lente da câmera trincada</label>
-                        <label class="checklist-item"><input type="checkbox" name="avaria" value="Aparelho não liga"> Aparelho não liga</label>
-                        <label class="checklist-item"><input type="checkbox" name="avaria" value="Sem gaveta de CHIP/SIM"> Sem gaveta de CHIP</label>
-                    </div>
-
-                    <input type="text" id="admin_valor" placeholder="Valor Estimado (ex: R$ 250,00)" required>
-
-                    <label for="admin_status" style="color: var(--text-gray);">Status Inicial:</label>
-                    <select id="admin_status" style="padding: 0.8rem; background-color: var(--bg-main); color: white; border: 1px solid var(--border-color); border-radius: 5px;">
-                        <option value="Em Análise Técnica">Em Análise Técnica</option>
-                        <option value="Aguardando Peça">Aguardando Peça</option>
-                        <option value="Em Manutenção">Em Manutenção</option>
-                        <option value="Pronto para Retirada">Pronto para Retirada</option>
-                        <option value="Entregue / Concluído">Entregue / Concluído</option>
-                    </select>
-
-                    <button type="submit" class="btn-red" style="justify-content: center; margin-top: 10px;">
-                        <i class="fa-solid fa-save"></i> Gerar e Salvar OS
-                    </button>
-                </form>
-                <div id="resultadoCadastro" style="margin-top: 15px; font-weight: bold;"></div>
-            </div>
-
-            <!-- Alterar Senha do Técnico -->
-            <div style="background-color: var(--bg-card); padding: 2rem; border-radius: 8px; border: 1px solid var(--border-color);">
-                <h3 style="margin-bottom: 1rem; font-size: 1.2rem;"><i class="fa-solid fa-key"></i> Alterar Senha de Acesso</h3>
-                <form id="formAlterarSenha" onsubmit="alterarSenhaAdmin(event)" style="display: flex; flex-direction: column; gap: 12px;">
-                    <input type="password" id="senha_atual" placeholder="Senha Atual" required>
-                    <input type="password" id="nova_senha" placeholder="Nova Senha" required>
-                    <button type="submit" class="btn-outline" style="justify-content: center;">
-                        <i class="fa-solid fa-shield-halved"></i> Atualizar Senha
-                    </button>
-                </form>
-                <div id="resultadoSenha" style="margin-top: 10px; font-size: 0.9rem; font-weight: bold;"></div>
-            </div>
-
-        </div>
-
-        <!-- Coluna Direita: Lista de OS Cadastradas com Busca -->
-        <div style="background-color: var(--bg-card); padding: 2rem; border-radius: 8px; border: 1px solid var(--border-color);">
-            <h2 style="margin-bottom: 1rem;"><i class="fa-solid fa-list-check"></i> Ordens de Serviço Ativas</h2>
-
-            <div style="margin-bottom: 1.5rem; position: relative;">
-                <input type="text" id="buscaAdmin" onkeyup="filtrarOrdensAdmin()" placeholder="Pesquisar por N° da OS, Cliente ou Aparelho..." style="width: 100%; padding: 0.8rem; padding-left: 2.2rem; background-color: var(--bg-main); color: white; border: 1px solid var(--border-color); border-radius: 5px; font-size: 0.95rem;">
-                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-gray);"></i>
-            </div>
-
-            <div id="listaOS">
-                {% for codigo, info in ordens.items() %}
-                <div class="card-os" id="card-{{ codigo }}" style="background-color: var(--bg-main); padding: 1.2rem; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 12px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <strong class="codigo-os" style="color: var(--primary-red); font-size: 1.1rem;">{{ codigo }}</strong>
-                        <span style="font-size: 0.85rem; background: rgba(229, 9, 20, 0.2); padding: 3px 8px; border-radius: 4px; color: var(--primary-red);">{{ info.status }}</span>
-                    </div>
-
-                    <div style="margin-top: 5px; font-size: 0.95rem;">
-                        <strong class="nome-cliente">{{ info.cliente }}</strong> (<span class="nome-aparelho">{{ info.aparelho }}</span>)
-                    </div>
-
-                    <small style="color: var(--text-gray); display: block; margin-top: 5px; line-height: 1.4;">
-                        <i class="fa-solid fa-location-dot"></i> {{ info.endereco }}<br>
-                        <i class="fa-solid fa-screwdriver-wrench"></i> Defeito: {{ info.defeito }}<br>
-                        <i class="fa-solid fa-file-medical"></i> Relatório: {{ info.relatorio }}<br>
-                        <i class="fa-solid fa-triangle-exclamation"></i> Avarias: {{ info.avarias | join(', ') if info.avarias else 'Nenhuma' }}<br>
-                        <i class="fa-solid fa-tag"></i> Valor: {{ info.valor }}
-                    </small>
-
-                    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-color); display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                        <select id="status_{{ codigo }}" class="status-select">
-                            <option value="Em Análise Técnica" {% if info.status == 'Em Análise Técnica' %}selected{% endif %}>Em Análise Técnica</option>
-                            <option value="Aguardando Peça" {% if info.status == 'Aguardando Peça' %}selected{% endif %}>Aguardando Peça</option>
-                            <option value="Em Manutenção" {% if info.status == 'Em Manutenção' %}selected{% endif %}>Em Manutenção</option>
-                            <option value="Pronto para Retirada" {% if info.status == 'Pronto para Retirada' %}selected{% endif %}>Pronto para Retirada</option>
-                            <option value="Entregue / Concluído" {% if info.status == 'Entregue / Concluído' %}selected{% endif %}>Entregue / Concluído</option>
-                        </select>
-                        <button onclick="alterarStatus('{{ codigo }}')" class="btn-outline" style="padding: 0.3rem 0.7rem; font-size: 0.8rem;">
-                            <i class="fa-solid fa-arrows-rotate"></i> Atualizar
-                        </button>
-                        <button onclick="abrirModalEdicao('{{ codigo }}', '{{ info.cliente }}', '{{ info.telefone }}', '{{ info.endereco }}', '{{ info.aparelho }}', '{{ info.defeito }}', '{{ info.relatorio }}', '{{ info.valor }}', '{{ info.status }}')" class="btn-outline" style="padding: 0.3rem 0.7rem; font-size: 0.8rem; border-color: #f39c12; color: #f39c12;">
-                            <i class="fa-solid fa-pen-to-square"></i> Editar
-                        </button>
-                        <button onclick="excluirOS('{{ codigo }}')" class="btn-outline" style="padding: 0.3rem 0.7rem; font-size: 0.8rem; border-color: #e74c3c; color: #e74c3c;">
-                            <i class="fa-solid fa-trash"></i> Excluir
-                        </button>
-                        <button onclick="enviarWhatsApp('{{ codigo }}', '{{ info.cliente }}', '{{ info.telefone }}', '{{ info.aparelho }}', '{{ info.defeito }}', '{{ info.status }}', '{{ info.valor }}')" class="btn-red" style="padding: 0.3rem 0.7rem; font-size: 0.8rem; background-color: #25d366; border-color: #25d366;">
-                            <i class="fa-brands fa-whatsapp"></i> Enviar
-                        </button>
-                    </div>
-                </div>
-                {% else %}
-                <p style="color: var(--text-gray); text-align: center;">Nenhuma Ordem de Serviço cadastrada ainda.</p>
-                {% endfor %}
-            </div>
-        </div>
-
     </div>
 
-    <!-- Modal Editar OS -->
-    <div id="modalEdicao" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modalTitulo"><i class="fa-solid fa-pen-to-square" style="color: var(--primary-red);"></i> Editar Ordem de Serviço</h3>
-                <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 1.2rem;" onclick="fecharModalEdicao()"></i>
+    <!-- Dashboard Financeiro / Métricas (KPIs) -->
+    <div class="dashboard-cards">
+        <div class="kpi-card">
+            <h4>Faturamento Total</h4>
+            <div class="valor-kpi">{{ metricas.faturamento }}</div>
+        </div>
+        <div class="kpi-card">
+            <h4>Ticket Médio</h4>
+            <div class="valor-kpi">{{ metricas.ticket_medio }}</div>
+        </div>
+        <div class="kpi-card">
+            <h4>Ordens Abertas</h4>
+            <div class="valor-kpi">{{ metricas.os_abertas }}</div>
+        </div>
+        <div class="kpi-card">
+            <h4>Concluídas / Entregues</h4>
+            <div class="valor-kpi">{{ metricas.os_concluidas }}</div>
+        </div>
+    </div>
+
+    <div class="admin-container">
+        <!-- Coluna Esquerda: Formulário OS + Alterar Senha -->
+        <div>
+            <div class="card-admin">
+                <h3 id="tituloFormOS"><i class="fa-solid fa-plus-circle"></i> Abrir Nova Ordem de Serviço</h3>
+                <form id="formOS">
+                    <input type="hidden" id="codigo_os">
+
+                    <div class="form-group">
+                        <label>Telefone / WhatsApp (Digite para preencher cliente)</label>
+                        <input type="text" id="telefone" placeholder="ex: 31999998888" onblur="buscarClientePorTelefone()" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nome do Cliente</label>
+                        <input type="text" id="cliente" placeholder="Nome completo" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Endereço do Cliente</label>
+                        <input type="text" id="endereco" placeholder="Endereço" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Aparelho / Modelo</label>
+                        <input type="text" id="aparelho" placeholder="ex: iPhone 13 / Samsung A52" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Defeito Relatado pelo Cliente</label>
+                        <input type="text" id="defeito" placeholder="ex: Não liga / Tela quebrada" required>
+                    </div>
+
+                    <!-- CHECKLIST DE AVARIAS -->
+                    <div class="form-group">
+                        <label>Checklist de Entrada / Estado do Aparelho</label>
+                        <div class="checklist-container">
+                            <label class="checklist-item"><input type="checkbox" name="avaria" value="Tela Trincada"> Tela Trincada</label>
+                            <label class="checklist-item"><input type="checkbox" name="avaria" value="Marcas de Uso / Riscos"> Marcas de Uso / Riscos</label>
+                            <label class="checklist-item"><input type="checkbox" name="avaria" value="Aparelho Não Liga"> Aparelho Não Liga</label>
+                            <label class="checklist-item"><input type="checkbox" name="avaria" value="Sem Cartão SIM/SD"> Sem Cartão SIM/SD</label>
+                            <label class="checklist-item"><input type="checkbox" name="avaria" value="Tampa Traseira Danificada"> Tampa Traseira Danificada</label>
+                            <label class="checklist-item"><input type="checkbox" name="avaria" value="Botões Danificados"> Botões Danificados</label>
+                            <label class="checklist-item"><input type="checkbox" name="avaria" value="Conector frouxo/sujo"> Conector frouxo/sujo</label>
+                            <label class="checklist-item"><input type="checkbox" name="avaria" value="Molhado / Oxidado"> Molhado / Oxidado</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Problema Detectado / Relatório Técnico</label>
+                        <textarea id="relatorio" rows="3" placeholder="Descrição do diagnóstico realizado pelo técnico..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Orçamento / Valor (R$)</label>
+                        <input type="text" id="valor" placeholder="ex: 250,00 ou A definir" value="A definir" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Status Atual</label>
+                        <select id="status">
+                            <option value="Em Análise Técnica">Em Análise Técnica</option>
+                            <option value="Aguardando Aprovação">Aguardando Aprovação</option>
+                            <option value="Em Reparo">Em Reparo</option>
+                            <option value="Pronto para Retirada">Pronto para Retirada (Avisa WhatsApp automático)</option>
+                            <option value="Entregue">Entregue</option>
+                        </select>
+                    </div>
+                    <button type="submit" id="btnSalvarOS" class="btn-salvar">Gerar Ordem de Serviço</button>
+                    <button type="button" id="btnCancelarEdicao" class="btn-cancelar" onclick="resetarFormularioOS()">Cancelar Edição</button>
+                </form>
             </div>
-            <form id="formEditarOS" onsubmit="salvarEdicaoOS(event)" style="display: flex; flex-direction: column; gap: 12px;">
-                <input type="hidden" id="edit_codigo">
 
-                <label style="font-size: 0.85rem; color: var(--text-gray);">Cliente:</label>
-                <input type="text" id="edit_cliente" required>
+            <!-- Bloco de Alterar Senha do Técnico -->
+            <div class="card-admin">
+                <h3><i class="fa-solid fa-key"></i> Alterar Minha Senha</h3>
+                <form id="formMudarSenha">
+                    <div class="form-group">
+                        <label>Senha Atual</label>
+                        <input type="password" id="senha_atual" placeholder="Digite a senha atual" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nova Senha</label>
+                        <input type="password" id="nova_senha" placeholder="Digite a nova senha forte" required>
+                        <div class="requisitos-senha-admin">
+                            Mín. 8 caracteres, 1 maiúscula, 1 minúscula, 1 número e 1 caractere especial (ex: <code>@#$!</code>).
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-salvar" style="background: #333; border: 1px solid #555;">Atualizar Senha</button>
+                </form>
+            </div>
+        </div>
 
-                <label style="font-size: 0.85rem; color: var(--text-gray);">Telefone / WhatsApp:</label>
-                <input type="tel" id="edit_telefone" required>
+        <!-- Coluna Direita: Lista de Ordens de Serviço com Pesquisa -->
+        <div class="card-admin">
+            <h3><i class="fa-solid fa-list-check"></i> Ordens de Serviço Registradas</h3>
 
-                <label style="font-size: 0.85rem; color: var(--text-gray);">Endereço:</label>
-                <input type="text" id="edit_endereco">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="inputPesquisa" placeholder="Pesquisar por número da OS ou nome do cliente..." onkeyup="filtrarOS()">
+            </div>
 
-                <label style="font-size: 0.85rem; color: var(--text-gray);">Aparelho:</label>
-                <input type="text" id="edit_aparelho" required>
-
-                <label style="font-size: 0.85rem; color: var(--text-gray);">Defeito Relatado:</label>
-                <input type="text" id="edit_defeito">
-
-                <label style="font-size: 0.85rem; color: var(--text-gray);">Relatório Técnico:</label>
-                <textarea id="edit_relatorio" rows="3" style="padding: 0.8rem; background-color: var(--bg-main); color: white; border: 1px solid var(--border-color); border-radius: 5px;"></textarea>
-
-                <label style="font-size: 0.85rem; color: var(--text-gray);">Valor:</label>
-                <input type="text" id="edit_valor">
-
-                <label style="font-size: 0.85rem; color: var(--text-gray);">Status:</label>
-                <select id="edit_status" style="padding: 0.8rem; background-color: var(--bg-main); color: white; border: 1px solid var(--border-color); border-radius: 5px;">
-                    <option value="Em Análise Técnica">Em Análise Técnica</option>
-                    <option value="Aguardando Peça">Aguardando Peça</option>
-                    <option value="Em Manutenção">Em Manutenção</option>
-                    <option value="Pronto para Retirada">Pronto para Retirada</option>
-                    <option value="Entregue / Concluído">Entregue / Concluído</option>
-                </select>
-
-                <div style="display: flex; gap: 10px; margin-top: 15px; justify-content: flex-end;">
-                    <button type="button" class="btn-outline" onclick="fecharModalEdicao()">Cancelar</button>
-                    <button type="submit" class="btn-red"><i class="fa-solid fa-save"></i> Salvar Alterações</button>
-                </div>
-            </form>
+            <div id="containerListaOS" style="max-height: 750px; overflow-y: auto;">
+                {% if ordens %}
+                    {% for codigo, os in ordens.items() %}
+                    {% set avarias_str = os.avarias|join(', ') if os.avarias is iterable and os.avarias is not string else (os.avarias or 'Nenhuma avaria declarada') %}
+                    <div class="os-lista-item" data-codigo="{{ codigo|lower }}" data-cliente="{{ os.cliente|lower }}" data-aparelho="{{ os.aparelho|lower }}">
+                        <div class="os-lista-header">
+                            <strong style="color: #fff; font-size: 16px;">{{ codigo }}</strong>
+                            <span style="font-size: 12px; background: #333; padding: 3px 8px; border-radius: 4px; color: #ffcc00; font-weight: bold;">{{ os.status }}</span>
+                        </div>
+                        <div class="os-detalhes">
+                            <p>👤 <strong>Cliente:</strong> {{ os.cliente }} ({{ os.telefone }})</p>
+                            <p>📱 <strong>Aparelho:</strong> {{ os.aparelho }}</p>
+                            <p>⚠️ <strong>Defeito Relatado:</strong> {{ os.defeito }}</p>
+                            <p>📋 <strong>Checklist / Avarias:</strong> {{ avarias_str }}</p>
+                            <p>🛠️ <strong>Relatório Técnico:</strong> {{ os.relatorio or 'Ainda não avaliado' }}</p>
+                            <p>💰 <strong>Valor:</strong> {{ os.valor }}</p>
+                        </div>
+                        <div class="os-acoes">
+                            <button class="btn-os-editar" onclick="prepararEdicaoOS('{{ codigo }}', '{{ os.cliente }}', '{{ os.telefone }}', '{{ os.endereco }}', '{{ os.aparelho }}', '{{ os.defeito }}', '{{ avarias_str }}', '{{ os.relatorio or '' }}', '{{ os.valor }}', '{{ os.status }}')">
+                                <i class="fa-solid fa-pen"></i> Editar
+                            </button>
+                            <button class="btn-os-excluir" onclick="excluirOS('{{ codigo }}')">
+                                <i class="fa-solid fa-trash"></i> Excluir
+                            </button>
+                            <a href="#" class="btn-os-whatsapp" onclick="enviarWhatsApp('{{ os.telefone }}', '{{ codigo }}', '{{ os.cliente }}', '{{ os.aparelho }}', '{{ os.defeito }}', '{{ avarias_str }}', '{{ os.status }}', '{{ os.valor }}', '{{ os.relatorio or "Em avaliação" }}')">
+                                <i class="fa-brands fa-whatsapp"></i> Enviar WhatsApp
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="color: #777; text-align: center; padding: 20px;">Ainda não existem Ordens de Serviço cadastradas nesta loja.</p>
+                {% endif %}
+            </div>
         </div>
     </div>
 
     <script>
-        function filtrarOrdensAdmin() {
-            const termo = document.getElementById('buscaAdmin').value.toLowerCase();
-            const cards = document.querySelectorAll('.card-os');
+        async function buscarClientePorTelefone() {
+            let telefone = document.getElementById('telefone').value.trim();
+            if (telefone.length >= 8) {
+                const resp = await fetch('/api/buscar-cliente', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ telefone: telefone })
+                });
+                const res = await resp.json();
+                if (res.encontrado) {
+                    document.getElementById('cliente').value = res.nome;
+                    document.getElementById('endereco').value = res.endereco;
+                }
+            }
+        }
 
-            cards.forEach(card => {
-                const codigo = card.querySelector('.codigo-os').innerText.toLowerCase();
-                const cliente = card.querySelector('.nome-cliente').innerText.toLowerCase();
-                const aparelho = card.querySelector('.nome-aparelho').innerText.toLowerCase();
+        function filtrarOS() {
+            let termo = document.getElementById('inputPesquisa').value.toLowerCase().trim();
+            let itens = document.querySelectorAll('.os-lista-item');
+
+            itens.forEach(item => {
+                let codigo = item.getAttribute('data-codigo');
+                let cliente = item.getAttribute('data-cliente');
+                let aparelho = item.getAttribute('data-aparelho');
 
                 if (codigo.includes(termo) || cliente.includes(termo) || aparelho.includes(termo)) {
-                    card.style.display = 'block';
+                    item.style.display = "block";
                 } else {
-                    card.style.display = 'none';
+                    item.style.display = "none";
                 }
             });
         }
 
-        async function salvarOS(event) {
-            event.preventDefault();
+        function enviarWhatsApp(telefoneCliente, codigo, cliente, aparelho, defeito, avarias, status, valor, relatorio) {
+            let telLimpo = telefoneCliente.replace(/\D/g, '');
+            if (!telLimpo.startsWith('55')) {
+                telLimpo = '55' + telLimpo;
+            }
 
-            const avariasSelecionadas = Array.from(document.querySelectorAll('input[name="avaria"]:checked')).map(cb => cb.value);
+            const urlSite = window.location.origin + "{{ url_for('home_loja', slug=empresa.slug) }}";
+
+            let mensagem = `Olá *${cliente}*! Aqui é da *{{ empresa.nome }}* 🛠️.\n\n` +
+                           `📋 *Atualização da sua Ordem de Serviço*\n` +
+                           `• *Número da OS:* ${codigo}\n` +
+                           `• *Aparelho:* ${aparelho}\n` +
+                           `• *Defeito Relatado:* ${defeito}\n` +
+                           `• *Checklist Entrada:* ${avarias}\n` +
+                           `• *Status Atual:* *${status}*\n` +
+                           `• *Diagnóstico Técnico:* ${relatorio}\n` +
+                           `• *Valor / Orçamento:* ${valor}\n\n` +
+                           `🔍 *Como consultar o andamento no site:*\n` +
+                           `1. Acesse: ${urlSite}\n` +
+                           `2. Vá em *Consultar Ordem de Serviço*\n` +
+                           `3. Informe o código *${codigo}* e os 4 últimos dígitos do seu telefone.\n\n` +
+                           `Agradecemos pela preferência!`;
+
+            const urlWhatsApp = `https://wa.me/${telLimpo}?text=${encodeURIComponent(mensagem)}`;
+            window.open(urlWhatsApp, '_blank');
+        }
+
+        function prepararEdicaoOS(codigo, cliente, telefone, endereco, aparelho, defeito, avariasStr, relatorio, valor, status) {
+            document.getElementById('codigo_os').value = codigo;
+            document.getElementById('cliente').value = cliente;
+            document.getElementById('telefone').value = telefone;
+            document.getElementById('endereco').value = endereco;
+            document.getElementById('aparelho').value = aparelho;
+            document.getElementById('defeito').value = defeito;
+            document.getElementById('relatorio').value = relatorio;
+            document.getElementById('valor').value = valor;
+            document.getElementById('status').value = status;
+
+            const listaAvarias = avariasStr.split(',').map(a => a.trim());
+            document.querySelectorAll('input[name="avaria"]').forEach((cb) => {
+                cb.checked = listaAvarias.includes(cb.value);
+            });
+
+            document.getElementById('tituloFormOS').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Editar ' + codigo;
+            document.getElementById('btnSalvarOS').innerText = "Guardar Alterações";
+            document.getElementById('btnCancelarEdicao').style.display = "block";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetarFormularioOS() {
+            document.getElementById('codigo_os').value = '';
+            document.getElementById('formOS').reset();
+            document.getElementById('valor').value = 'A definir';
+            document.querySelectorAll('input[name="avaria"]').forEach(cb => cb.checked = false);
+            document.getElementById('tituloFormOS').innerHTML = '<i class="fa-solid fa-plus-circle"></i> Abrir Nova Ordem de Serviço';
+            document.getElementById('btnSalvarOS').innerText = "Gerar Ordem de Serviço";
+            document.getElementById('btnCancelarEdicao').style.display = "none";
+        }
+
+        document.getElementById('formOS').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const codigoOS = document.getElementById('codigo_os').value;
+            const statusSelecionado = document.getElementById('status').value;
+            const telefoneCliente = document.getElementById('telefone').value;
+            const nomeCliente = document.getElementById('cliente').value;
+            const aparelhoCliente = document.getElementById('aparelho').value;
+            const defeitoCliente = document.getElementById('defeito').value;
+            const relatorioCliente = document.getElementById('relatorio').value;
+            const valorCliente = document.getElementById('valor').value;
+
+            const avariasSelecionadas = [];
+            document.querySelectorAll('input[name="avaria"]:checked').forEach((cb) => {
+                avariasSelecionadas.push(cb.value);
+            });
 
             const dados = {
-                cliente: document.getElementById('admin_cliente').value,
-                telefone: document.getElementById('admin_telefone').value,
-                endereco: document.getElementById('admin_endereco').value,
-                aparelho: document.getElementById('admin_aparelho').value,
-                defeito: document.getElementById('admin_defeito').value,
-                relatorio: document.getElementById('admin_relatorio').value,
+                codigo_os: codigoOS,
+                cliente: nomeCliente,
+                telefone: telefoneCliente,
+                endereco: document.getElementById('endereco').value,
+                aparelho: aparelhoCliente,
+                defeito: defeitoCliente,
                 avarias: avariasSelecionadas,
-                valor: document.getElementById('admin_valor').value,
-                status: document.getElementById('admin_status').value
+                relatorio: relatorioCliente,
+                valor: valorCliente,
+                status: statusSelecionado
             };
 
-            const resposta = await fetch('/api/criar-os', {
+            const url = codigoOS ? '/api/editar-os' : '/api/criar-os';
+
+            const resposta = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dados)
@@ -297,69 +440,30 @@
             const resultado = await resposta.json();
 
             if (resultado.sucesso) {
-                document.getElementById('resultadoCadastro').style.color = '#25d366';
-                document.getElementById('resultadoCadastro').innerText = `${resultado.mensagem} Código: ${resultado.codigo_os}`;
-                setTimeout(() => location.reload(), 1200);
-            }
-        }
-
-        async function alterarStatus(codigoOS) {
-            const novoStatus = document.getElementById(`status_${codigoOS}`).value;
-
-            const resposta = await fetch('/api/atualizar-status-os', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    codigo_os: codigoOS,
-                    novo_status: novoStatus
-                })
-            });
-
-            const resultado = await resposta.json();
-
-            if (resultado.sucesso) {
-                alert(resultado.mensagem);
+                // SE O STATUS FOR "Pronto para Retirada", dispara o aviso automático para o WhatsApp!
+                if (statusSelecionado === "Pronto para Retirada") {
+                    if (confirm("Ordem salva com sucesso! O aparelho está 'Pronto para Retirada'. Deseja abrir o WhatsApp agora para enviar a mensagem automática ao cliente?")) {
+                        const avariasStr = avariasSelecionadas.join(', ');
+                        enviarWhatsApp(telefoneCliente, resultado.codigo_os || codigoOS, nomeCliente, aparelhoCliente, defeitoCliente, avariasStr, statusSelecionado, valorCliente, relatorioCliente || "Aparelho reparado e pronto!");
+                    }
+                } else {
+                    alert(resultado.mensagem);
+                }
                 location.reload();
             } else {
-                alert("Erro ao atualizar o status.");
+                alert(resultado.mensagem);
             }
-        }
+        });
 
-        function abrirModalEdicao(codigo, cliente, telefone, endereco, aparelho, defeito, relatorio, valor, status) {
-            document.getElementById('edit_codigo').value = codigo;
-            document.getElementById('modalTitulo').innerHTML = `<i class="fa-solid fa-pen-to-square" style="color: var(--primary-red);"></i> Editar ${codigo}`;
-            document.getElementById('edit_cliente').value = cliente || '';
-            document.getElementById('edit_telefone').value = telefone || '';
-            document.getElementById('edit_endereco').value = endereco || '';
-            document.getElementById('edit_aparelho').value = aparelho || '';
-            document.getElementById('edit_defeito').value = defeito || '';
-            document.getElementById('edit_relatorio').value = relatorio || '';
-            document.getElementById('edit_valor').value = valor || '';
-            document.getElementById('edit_status').value = status || 'Em Análise Técnica';
+        document.getElementById('formMudarSenha').addEventListener('submit', async function(e) {
+            e.preventDefault();
 
-            document.getElementById('modalEdicao').style.display = 'flex';
-        }
-
-        function fecharModalEdicao() {
-            document.getElementById('modalEdicao').style.display = 'none';
-        }
-
-        async function salvarEdicaoOS(event) {
-            event.preventDefault();
-            const codigo = document.getElementById('edit_codigo').value;
             const dados = {
-                codigo_os: codigo,
-                cliente: document.getElementById('edit_cliente').value,
-                telefone: document.getElementById('edit_telefone').value,
-                endereco: document.getElementById('edit_endereco').value,
-                aparelho: document.getElementById('edit_aparelho').value,
-                defeito: document.getElementById('edit_defeito').value,
-                relatorio: document.getElementById('edit_relatorio').value,
-                status: document.getElementById('edit_status').value,
-                valor: document.getElementById('edit_valor').value
+                senha_atual: document.getElementById('senha_atual').value,
+                nova_senha: document.getElementById('nova_senha').value
             };
 
-            const resposta = await fetch('/api/editar-os', {
+            const resposta = await fetch('/api/mudar-senha', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dados)
@@ -368,12 +472,12 @@
             const resultado = await resposta.json();
             alert(resultado.mensagem);
             if (resultado.sucesso) {
-                location.reload();
+                document.getElementById('formMudarSenha').reset();
             }
-        }
+        });
 
         async function excluirOS(codigo) {
-            if (confirm(`Tem certeza de que deseja excluir a ${codigo}?`)) {
+            if (confirm(`Tem a certeza absoluta de que pretende excluir a ${codigo}?`)) {
                 const resposta = await fetch('/api/excluir-os', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -383,64 +487,9 @@
                 const resultado = await resposta.json();
                 alert(resultado.mensagem);
                 if (resultado.sucesso) {
-                    const card = document.getElementById(`card-${codigo}`);
-                    if (card) card.remove();
+                    location.reload();
                 }
             }
-        }
-
-        async function alterarSenhaAdmin(event) {
-            event.preventDefault();
-
-            const senhaAtual = document.getElementById('senha_atual').value;
-            const novaSenha = document.getElementById('nova_senha').value;
-            const divResultado = document.getElementById('resultadoSenha');
-
-            const resposta = await fetch('/api/alterar-senha', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    senha_atual: senhaAtual,
-                    nova_senha: novaSenha
-                })
-            });
-
-            const resultado = await resposta.json();
-
-            divResultado.style.display = 'block';
-            if (resultado.sucesso) {
-                divResultado.style.color = '#25d366';
-                divResultado.innerText = resultado.mensagem;
-                document.getElementById('formAlterarSenha').reset();
-            } else {
-                divResultado.style.color = 'var(--primary-red)';
-                divResultado.innerText = resultado.mensagem;
-            }
-        }
-
-        function enviarWhatsApp(os, cliente, telefone, aparelho, defeito, status, valor) {
-            const linkSite = "https://lung-infocell.onrender.com/#consultar-os";
-
-            const mensagem = `📱 *LUNG INFOCELL - Ordem de Serviço*\n` +
-                `-----------------------------------\n` +
-                `Olá, *${cliente}*!\n` +
-                `Sua Ordem de Serviço foi gerada com sucesso.\n\n` +
-                `📋 *OS:* ${os}\n` +
-                `🔧 *Aparelho:* ${aparelho}\n` +
-                `🛠️ *Defeito:* ${defeito}\n` +
-                `📌 *Status:* ${status}\n` +
-                `💰 *Valor:* ${valor}\n\n` +
-                `🔍 *Como acompanhar o status do seu aparelho:*\n` +
-                `Acesse o link direto: ${linkSite}\n` +
-                `1. Role até a área de consultar OS do site\n` +
-                `2. Digite o número da sua OS (*${os}*)\n` +
-                `3. Digite os *4 últimos dígitos do seu telefone*\n\n` +
-                `Qualquer dúvida, estamos à disposição. Obrigado pela preferência! Equipe Lung InfoCell! 🚀`;
-
-            const telLimpo = telefone.replace(/\D/g, '');
-            const url = `https://api.whatsapp.com/send?phone=55${telLimpo}&text=${encodeURIComponent(mensagem)}`;
-
-            window.open(url, '_blank');
         }
     </script>
 </body>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Aguardando Ativação - {{ empresa.nome }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #121212; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; text-align: center; }
+        .card { background: #1e1e1e; padding: 40px; border-radius: 12px; max-width: 480px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); border-top: 4px solid #ffcc00; }
+        .card i.main-icon { font-size: 50px; color: #ffcc00; margin-bottom: 20px; }
+        .card h2 { font-size: 22px; margin-bottom: 10px; }
+        .card p { color: #aaa; font-size: 14px; line-height: 1.6; margin-bottom: 20px; }
+
+        /* Botão do WhatsApp para Suporte/Pagamento */
+        .btn-whatsapp {
+            background: #25d366; color: #fff; text-decoration: none; padding: 12px 20px;
+            border-radius: 6px; font-weight: bold; font-size: 15px; display: inline-flex;
+            align-items: center; gap: 8px; margin-bottom: 15px; width: 100%; justify-content: center;
+            transition: background 0.3s;
+        }
+        .btn-whatsapp:hover { background: #20ba5a; }
+
+        .btn-voltar { background: #333; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; font-size: 14px; display: inline-block; width: 100%; }
+        .btn-voltar:hover { background: #444; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <i class="fa-solid fa-clock-rotate-left main-icon"></i>
+        <h2>Loja Aguardando Ativação</h2>
+        <p>A assistência <strong>{{ empresa.nome }}</strong> foi cadastrada com sucesso! Para liberar o acesso completo ao seu painel e à sua loja por <strong>R$ 49,90/mês</strong>, entre em contacto com a nossa equipa para concluir o pagamento.</p>
+
+        <!-- Botão direto para o seu WhatsApp -->
+        <a href="https://wa.me/5531972148479?text=Olá!%20Cadastrei%20a%20assistência%20*{{ empresa.nome }}*%20no%20BancadaPro%20e%20gostaria%20de%20fazer%20o%20pagamento%20para%20liberar%20o%20acesso." target="_blank" class="btn-whatsapp">
+            <i class="fa-brands fa-whatsapp" style="font-size: 18px;"></i> Falar com o Suporte (Pix / Pagamento)
+        </a>
+
+        <a href="{{ url_for('login') }}" class="btn-voltar"><i class="fa-solid fa-arrow-left"></i> Voltar ao Login</a>
+    </div>
+</body>
+</html>

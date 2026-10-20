@@ -392,12 +392,12 @@ def criar_os():
         return jsonify({"sucesso": False,
                         "mensagem": "Preencha todos os campos obrigatórios (Cliente, Telefone, Aparelho e Defeito)."}), 400
 
-    # Gera um código único baseado no ID máximo atual para nunca repetir
-    ultima_os = OrdemServico.query.filter_by(empresa_id=empresa_id).order_by(OrdemServico.id.desc()).first()
-    proximo_id = (ultima_os.id + 1) if ultima_os else 1
+    # Conta apenas as OS desta empresa específica para o número ser sequencial e único por loja
+    total_os_empresa = OrdemServico.query.filter_by(empresa_id=empresa_id).count()
+    proximo_id = total_os_empresa + 1
     codigo_os = f"OS-{1025 + proximo_id}"
 
-    # Garantir que o código gerado é único na base
+    # Garante que, se houver qualquer duplicado por coincidência, incrementa até achar um livre
     while OrdemServico.query.filter_by(empresa_id=empresa_id, codigo=codigo_os).first():
         proximo_id += 1
         codigo_os = f"OS-{1025 + proximo_id}"

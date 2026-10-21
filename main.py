@@ -96,7 +96,7 @@ class OrdemServico(db.Model):
     valor = db.Column(db.String(50), nullable=False, default="A definir")
     garantia = db.Column(db.String(50), nullable=True, default="90 Dias")
     termos = db.Column(db.Text, nullable=True,
-                       default="Garantia cobre apenas o componente trocado. Aparelhos não retirados em 90 dias serão descartados.")
+                       default="Nossa loja oferece 90 dias de garantia sobre os serviços realizados e as peças substituídas, conforme a legislação vigente.\n\n✅ A garantia cobre defeitos relacionados ao serviço executado ou às peças substituídas.\n\n⚠️ A garantia poderá não cobrir:\n- Danos causados por quedas, impactos ou mau uso;\n- Danos por contato com líquidos ou oxidação posterior;\n- Novos defeitos sem relação com o reparo efetuado;\n- Danos decorrentes de intervenções de terceiros.\n\n📌 Cada situação será avaliada tecnicamente, respeitando os direitos do consumidor previstos em lei.")
 
 
 # --- MIGRAÇÃO AUTOMÁTICA E INICIALIZAÇÃO ---
@@ -416,6 +416,8 @@ def criar_os():
     avarias_str = ", ".join(avarias_lista) if isinstance(avarias_lista, list) else str(avarias_lista)
     end_cliente = dados.get('endereco', '')
 
+    default_termos = "Nossa loja oferece 90 dias de garantia sobre os serviços realizados e as peças substituídas, conforme a legislação vigente.\n\n✅ A garantia cobre defeitos relacionados ao serviço executado ou às peças substituídas.\n\n⚠️ A garantia poderá não cobrir:\n- Danos causados por quedas, impactos ou mau uso;\n- Danos por contato com líquidos ou oxidação posterior;\n- Novos defeitos sem relação com o reparo efetuado;\n- Danos decorrentes de intervenções de terceiros.\n\n📌 Cada situação será avaliada tecnicamente, respeitando os direitos do consumidor previstos em lei."
+
     try:
         nova_os = OrdemServico(
             empresa_id=empresa_id,
@@ -430,7 +432,7 @@ def criar_os():
             status=dados.get('status', 'Em Análise Técnica'),
             valor=dados.get('valor', 'A definir'),
             garantia=dados.get('garantia', '90 Dias'),
-            termos=dados.get('termos', 'Garantia cobre apenas o componente trocado.')
+            termos=dados.get('termos', default_termos)
         )
         db.session.add(nova_os)
         db.session.commit()

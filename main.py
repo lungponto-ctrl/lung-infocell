@@ -392,24 +392,17 @@ def criar_os():
         return jsonify({"sucesso": False,
                         "mensagem": "Preencha todos os campos obrigatórios (Cliente, Telefone, Aparelho e Defeito)."}), 400
 
-    # Busca a última OS cadastrada DESSA EMPRESA específica para pegar o número mais alto com segurança
-    ultima_os_empresa = OrdemServico.query.filter_by(empresa_id=empresa_id).order_by(OrdemServico.id.desc()).first()
+    # Conta quantas OS esta empresa específica já tem para criar uma sequência limpa e única
+    total_os_empresa = OrdemServico.query.filter_by(empresa_id=empresa_id).count()
+    proximo_num = 1025 + total_os_empresa + 1
 
-    if ultima_os_empresa and ultima_os_empresa.codigo.startswith('OS-'):
-        try:
-            num_atual = int(ultima_os_empresa.codigo.replace('OS-', ''))
-            proximo_num = num_atual + 1
-        except ValueError:
-            proximo_num = 1026
-    else:
-        proximo_num = 1026
+    # Inclui o ID da empresa no código (Ex: OS-3-1026) para isolar completamente entre as lojas no banco PostgreSQL
+    codigo_os = f"OS-{empresa_id}-{proximo_num}"
 
-    codigo_os = f"OS-{proximo_num}"
-
-    # Loop de segurança extrema caso o número já exista por algum motivo na base
-    while OrdemServico.query.filter_by(empresa_id=empresa_id, codigo=codigo_os).first():
+    # Loop de segurança extra caso o código exato já exista
+    while OrdemServico.query.filter_by(codigo=codigo_os).first():
         proximo_num += 1
-        codigo_os = f"OS-{proximo_num}"
+        codigo_os = f"OS-{empresa_id}-{proximo_num}"
 
     avarias_lista = dados.get('avarias', [])
     avarias_str = ", ".join(avarias_lista) if isinstance(avarias_lista, list) else str(avarias_lista)
@@ -438,7 +431,6 @@ def criar_os():
     except Exception as e:
         db.session.rollback()
         return jsonify({"sucesso": False, "mensagem": f"Erro ao criar OS no banco de dados: {str(e)}"}), 500
-
 
 @app.route('/api/consultar-os', methods=['POST'])
 def consultar_os():

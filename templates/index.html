@@ -7,211 +7,164 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <!-- FORÇAR A COR DINÂMICA DA LOJA DIRETAMENTE NA PÁGINA -->
     <style>
         :root {
             --cor-primaria: {{ empresa.cor_primaria if empresa and empresa.cor_primaria else '#ff3b30' }};
         }
-        body {
-            background-color: #121212;
-            color: #e0e0e0;
-            margin: 0;
-            padding: 20px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        .loja-header {
-            background: #1e1e1e;
-            padding: 30px;
-            border-radius: 8px;
-            text-align: center;
-            border-bottom: 4px solid var(--cor-primaria);
-            margin-bottom: 25px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-        }
-        .loja-header h1 { color: #fff; margin: 0 0 10px 0; font-size: 26px; }
-        .loja-header p { color: #aaa; margin: 5px 0; font-size: 14px; }
-
-        .card-home {
-            background: #1e1e1e;
-            padding: 25px;
-            border-radius: 8px;
-            border: 1px solid #2a2a2a;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            margin-bottom: 25px;
-        }
-        .card-home h3 {
-            color: #fff; margin-top: 0; margin-bottom: 15px; font-size: 18px;
-            border-bottom: 1px solid #333; padding-bottom: 10px;
-        }
-
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 6px; font-size: 13px; color: #aaa; }
-        .form-group input {
-            width: 100%; padding: 12px; background: #2a2a2a; border: 1px solid #444;
-            color: #fff; border-radius: 6px; font-size: 14px; box-sizing: border-box;
-        }
-        .form-group input:focus { border-color: var(--cor-primaria); outline: none; }
-
-        .btn-acao {
-            background-color: var(--cor-primaria); color: white; border: none; padding: 12px;
-            width: 100%; border-radius: 6px; font-weight: bold; font-size: 15px; cursor: pointer;
-            transition: filter 0.3s;
-        }
-        .btn-acao:hover { filter: brightness(0.85); }
-
-        .resultado-box {
-            background: #252525; padding: 20px; border-radius: 6px; margin-top: 20px;
-            border-left: 4px solid var(--cor-primaria); display: none;
-        }
-        .resultado-box p { margin: 8px 0; font-size: 14px; color: #ccc; }
-
-        .btn-login-fixo {
-            text-align: center; margin-top: 30px; margin-bottom: 20px;
-        }
-        .btn-login-fixo a {
-            color: #888; text-decoration: none; font-size: 13px; transition: color 0.3s;
-        }
-        .btn-login-fixo a:hover { color: #fff; }
+        .header { border-bottom: 3px solid var(--cor-primaria) !important; }
+        .logo-icon, .hero-content .highlight, .service-card i { color: var(--cor-primaria) !important; }
+        .btn-primary, .btn-consultar { background-color: var(--cor-primaria) !important; }
+        .btn-primary:hover, .btn-consultar:hover { filter: brightness(0.85); }
+        .consult-card { border-top: 4px solid var(--cor-primaria) !important; }
+        .service-card:hover { border-color: var(--cor-primaria) !important; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <!-- Cabeçalho da Loja -->
-        <div class="loja-header">
-            <h1><i class="fa-solid fa-store"></i> {{ empresa.nome }}</h1>
-            <p><i class="fa-solid fa-location-dot"></i> {{ empresa.endereco }}</p>
-            <p><i class="fa-solid fa-clock"></i> {{ empresa.horario or "Segunda a Sexta: 08:00 - 18:00" }}</p>
-            <p><i class="fa-brands fa-whatsapp"></i> WhatsApp: {{ empresa.telefone_whatsapp }}</p>
+    <!-- Cabeçalho Dinâmico -->
+    <header class="header">
+        <div class="logo-container">
+            <i class="fa-solid fa-microchip logo-icon"></i>
+            <h1>{{ empresa.nome }}</h1>
         </div>
+        <nav class="nav-links">
+            <a href="#inicio">Início</a>
+            <a href="#servicos">Serviços</a>
+            <a href="#consultar">Consultar OS</a>
+            <a href="#contato">Contato</a>
+            <a href="{{ url_for('login') }}" class="btn-admin"><i class="fa-solid fa-user-gear"></i> Área do Técnico</a>
+        </nav>
+        <a href="https://wa.me/{{ empresa.telefone_whatsapp }}" target="_blank" class="btn-whatsapp">
+            <i class="fa-brands fa-whatsapp"></i> WhatsApp
+        </a>
+    </header>
 
-        <!-- Consultar Ordem de Serviço -->
-        <div class="card-home">
-            <h3><i class="fa-solid fa-magnifying-glass"></i> Consultar Andamento da Ordem de Serviço</h3>
-            <div class="form-group">
-                <label>Número da OS (ex: OS-1-1026)</label>
-                <input type="text" id="consulta_codigo" placeholder="Digite o número da OS">
-            </div>
-            <div class="form-group">
-                <label>Últimos 4 dígitos do seu telefone cadastrado</label>
-                <input type="text" id="consulta_telefone" placeholder="ex: 8888" maxlength="4">
-            </div>
-            <button type="button" class="btn-acao" onclick="consultarOS()">Consultar Aparelho</button>
-
-            <div id="resultadoOS" class="resultado-box">
-                <p><strong>Número da OS:</strong> <span id="res_codigo"></span></p>
-                <p><strong>Cliente:</strong> <span id="res_cliente"></span></p>
-                <p><strong>Aparelho:</strong> <span id="res_aparelho"></span></p>
-                <p><strong>Defeito Relatado:</strong> <span id="res_defeito"></span></p>
-                <p><strong>Status Atual:</strong> <span id="res_status" style="color: #ffcc00; font-weight: bold;"></span></p>
-                <p><strong>Laudo Técnico:</strong> <span id="res_relatorio"></span></p>
-                <p><strong>Valor / Orçamento:</strong> <span id="res_valor"></span></p>
-                <p><strong>Garantia:</strong> <span id="res_garantia"></span></p>
-            </div>
+    <!-- Secção Principal / Hero -->
+    <section id="inicio" class="hero">
+        <div class="hero-content">
+            <h2>Assistência Técnica <span class="highlight">Especializada</span></h2>
+            <p>Conserto de smartphones, iPhones, computadores e venda de acessórios de qualidade.</p>
+            <a href="#consultar" class="btn-primary"><i class="fa-solid fa-magnifying-glass"></i> Consultar Ordem de Serviço</a>
         </div>
+    </section>
 
-        <!-- SECÇÃO DE PEDIDO DE ORÇAMENTO -->
-        <div style="background: #1e1e1e; padding: 25px; border-radius: 8px; border: 1px solid #2a2a2a; margin-bottom: 25px; border-top: 4px solid var(--cor-primaria); box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
-            <h3 style="color: #fff; margin-top: 0; margin-bottom: 15px; font-size: 18px;"><i class="fa-solid fa-calculator"></i> Solicite um Orçamento Rápido</h3>
-            <p style="color: #aaa; font-size: 14px; margin-bottom: 20px;">Tem um aparelho com defeito? Preencha os dados abaixo e fale diretamente com o nosso técnico pelo WhatsApp!</p>
+    <!-- Secção de Serviços Dinâmica -->
+    <section id="servicos" class="services">
+        <h3>Nossos Serviços</h3>
+        <div class="services-grid">
+            {% set lista_servicos = empresa.servicos.split(',') if empresa and empresa.servicos else ['tela_bateria', 'conector', 'computadores', 'acessorios'] %}
 
-            <div class="orc-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div style="margin-bottom: 12px;">
-                    <label style="display: block; margin-bottom: 5px; font-size: 13px; color: #aaa;">Seu Nome</label>
-                    <input type="text" id="orc_nome" placeholder="Digite seu nome" style="width: 100%; padding: 10px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 6px; box-sizing: border-box; font-size: 14px;">
+            {% if 'tela_bateria' in lista_servicos %}
+            <div class="service-card">
+                <i class="fa-solid fa-mobile-screen-button"></i>
+                <h4>Troca de Tela & Bateria</h4>
+                <p>Substituição rápida e garantida de telas quebradas e baterias viciadas para smartphones e iPhones.</p>
+            </div>
+            {% endif %}
+
+            {% if 'conector' in lista_servicos %}
+            <div class="service-card">
+                <i class="fa-solid fa-bolt"></i>
+                <h4>Conector de Carga</h4>
+                <p>Reparo e troca de conectores de carga/porta USB para aparelhos que não carregam.</p>
+            </div>
+            {% endif %}
+
+            {% if 'computadores' in lista_servicos %}
+            <div class="service-card">
+                <i class="fa-solid fa-laptop"></i>
+                <h4>Conserto de Computadores</h4>
+                <p>Formatação, limpeza preventiva, upgrade de SSD e manutenção de hardware.</p>
+            </div>
+            {% endif %}
+
+            {% if 'acessorios' in lista_servicos %}
+            <div class="service-card">
+                <i class="fa-solid fa-headphones"></i>
+                <h4>Acessórios & Carregadores</h4>
+                <p>Capinhas, películas de proteção, cabos e acessórios de alta qualidade.</p>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Secção de Consulta de OS -->
+    <section id="consultar" class="consult-section">
+        <div class="consult-card">
+            <h3>Consultar Andamento da Ordem de Serviço</h3>
+            <p>Insira o número da sua OS e os 4 últimos dígitos do seu telefone cadastrado:</p>
+
+            <form id="formConsultarOS">
+                <div class="input-group">
+                    <input type="text" id="numero_os" placeholder="Número da OS (ex: OS-1025)" required>
                 </div>
-                <div style="margin-bottom: 12px;">
-                    <label style="display: block; margin-bottom: 5px; font-size: 13px; color: #aaa;">Seu Telefone / WhatsApp</label>
-                    <input type="text" id="orc_telefone" placeholder="ex: 31999998888" style="width: 100%; padding: 10px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 6px; box-sizing: border-box; font-size: 14px;">
+                <div class="input-group">
+                    <input type="text" id="telefone_cliente" placeholder="4 últimos dígitos do telefone" maxlength="4" required>
                 </div>
+                <button type="submit" class="btn-consultar">Consultar Aparelho</button>
+            </form>
+
+            <div id="resultadoOS" class="resultado-box" style="display: none;">
+                <!-- O resultado da consulta aparece aqui via JavaScript -->
             </div>
-            <div style="margin-bottom: 12px;">
-                <label style="display: block; margin-bottom: 5px; font-size: 13px; color: #aaa;">Aparelho / Modelo</label>
-                <input type="text" id="orc_aparelho" placeholder="ex: iPhone 11, Samsung A32, Notebook..." style="width: 100%; padding: 10px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 6px; box-sizing: border-box; font-size: 14px;">
-            </div>
-            <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 5px; font-size: 13px; color: #aaa;">Qual o defeito ou problema?</label>
-                <textarea id="orc_defeito" rows="3" placeholder="Descreva o que está acontecendo com o aparelho..." style="width: 100%; padding: 10px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 6px; box-sizing: border-box; font-size: 14px; resize: vertical;"></textarea>
-            </div>
-            <button type="button" onclick="enviarOrcamentoWhatsApp()" style="background-color: #25d366; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-weight: bold; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: filter 0.3s;" onmouseover="this.style.filter='brightness(0.9)'" onmouseout="this.style.filter='none'">
-                <i class="fa-brands fa-whatsapp" style="font-size: 18px;"></i> Enviar Pedido de Orçamento via WhatsApp
-            </button>
         </div>
+    </section>
 
-        <div class="btn-login-fixo">
-            <a href="{{ url_for('login') }}"><i class="fa-solid fa-lock"></i> Acesso Restrito ao Técnico (Painel)</a>
-        </div>
-    </div>
+    <!-- Secção de Contato -->
+    <section id="contato" class="contact-section">
+        <h3>Onde Estamos</h3>
+        <p><i class="fa-solid fa-location-dot"></i> {{ empresa.endereco }}</p>
+        <p><i class="fa-solid fa-phone"></i> WhatsApp: <a href="https://wa.me/{{ empresa.telefone_whatsapp }}" target="_blank" style="color: var(--cor-primaria); text-decoration: none;">{{ empresa.telefone_whatsapp }}</a></p>
+    </section>
 
-    <!-- Estilo responsivo para telemóveis -->
-    <style>
-        @media (max-width: 768px) {
-            .orc-grid { grid-template-columns: 1fr !important; }
-        }
-    </style>
+    <!-- Rodapé -->
+    <footer>
+        <p>&copy; 2026 {{ empresa.nome }} - Powered by <strong>BancadaPro SaaS</strong></p>
+    </footer>
 
+    <!-- Script de Consulta de OS -->
     <script>
-        async function consultarOS() {
-            let codigo = document.getElementById('consulta_codigo').value.trim();
-            let telefone = document.getElementById('consulta_telefone').value.trim();
+        document.getElementById('formConsultarOS').addEventListener('submit', async function(e) {
+            e.preventDefault();
 
-            if (!codigo || !telefone) {
-                alert("Preencha o número da OS e os 4 últimos dígitos do telefone.");
-                return;
+            const numeroOs = document.getElementById('numero_os').value.trim();
+            const digitosTelefone = document.getElementById('telefone_cliente').value.trim();
+            const resultadoBox = document.getElementById('resultadoOS');
+
+            try {
+                const resposta = await fetch('/api/consultar-os', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ numero_os: numeroOs, digitos_telefone: digitosTelefone })
+                });
+
+                const dados = await resposta.json();
+
+                resultadoBox.style.display = 'block';
+                if (dados.sucesso) {
+                    resultadoBox.style.background = '#1e3a1e';
+                    resultadoBox.style.borderLeft = '4px solid #4cd964';
+                    resultadoBox.innerHTML = `
+                        <h4><i class="fa-solid fa-check-circle"></i> OS Encontrada: ${dados.codigo}</h4>
+                        <p><strong>Cliente:</strong> ${dados.cliente}</p>
+                        <p><strong>Aparelho:</strong> ${dados.aparelho}</p>
+                        <p><strong>Defeito:</strong> ${dados.defeito}</p>
+                        <p><strong>Status Atual:</strong> <span style="color: #ffcc00;">${dados.status}</span></p>
+                        <p><strong>Valor:</strong> ${dados.valor}</p>
+                        <p><strong>Relatório Técnico:</strong> ${dados.relatorio}</p>
+                    `;
+                } else {
+                    resultadoBox.style.background = '#3a1e1e';
+                    resultadoBox.style.borderLeft = '4px solid #ff3b30';
+                    resultadoBox.innerHTML = `<p><i class="fa-solid fa-triangle-exclamation"></i> ${dados.mensagem}</p>`;
+                }
+            } catch (erro) {
+                resultadoBox.style.display = 'block';
+                resultadoBox.style.background = '#3a1e1e';
+                resultadoBox.innerHTML = `<p>Erro ao consultar. Tente novamente mais tarde.</p>`;
             }
-
-            const resp = await fetch('/api/consultar-os', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ numero_os: codigo, digitos_telefone: telefone })
-            });
-
-            const res = await resp.json();
-
-            if (res.sucesso) {
-                document.getElementById('res_codigo').innerText = res.codigo;
-                document.getElementById('res_cliente').innerText = res.cliente;
-                document.getElementById('res_aparelho').innerText = res.aparelho;
-                document.getElementById('res_defeito').innerText = res.defeito;
-                document.getElementById('res_status').innerText = res.status;
-                document.getElementById('res_relatorio').innerText = res.relatorio;
-                document.getElementById('res_valor').innerText = res.valor;
-                document.getElementById('res_garantia').innerText = res.garantia;
-                document.getElementById('resultadoOS').style.display = "block";
-            } else {
-                alert(res.mensagem);
-                document.getElementById('resultadoOS').style.display = "none";
-            }
-        }
-
-        function enviarOrcamentoWhatsApp() {
-            let nome = document.getElementById('orc_nome').value.trim();
-            let telefone = document.getElementById('orc_telefone').value.trim();
-            let aparelho = document.getElementById('orc_aparelho').value.trim();
-            let defeito = document.getElementById('orc_defeito').value.trim();
-
-            if (!nome || !telefone || !aparelho || !defeito) {
-                alert("Por favor, preencha todos os campos para solicitar o orçamento.");
-                return;
-            }
-
-            let whatsappLoja = "{{ empresa.telefone_whatsapp }}".replace(/\D/g, '');
-            if (!whatsappLoja.startsWith('55')) {
-                whatsappLoja = '55' + whatsappLoja;
-            }
-
-            let mensagem = `Olá! Gostaria de solicitar um orçamento.\n\n` +
-                           `👤 *Nome:* ${nome}\n` +
-                           `📱 *Aparelho:* ${aparelho}\n` +
-                           `⚠️ *Defeito:* ${defeito}\n` +
-                           `📞 *Contato:* ${telefone}`;
-
-            let urlWp = `https://wa.me/${whatsappLoja}?text=${encodeURIComponent(mensagem)}`;
-            window.open(urlWp, '_blank');
-        }
+        });
     </script>
 </body>
 </html>

@@ -31,14 +31,6 @@ def apenas_numeros(texto):
 
 
 def validar_senha_forte(senha):
-    """
-    Exige:
-    - Mínimo de 8 caracteres
-    - Pelo menos uma letra maiúscula
-    - Pelo menos uma letra minúscula
-    - Pelo menos um número
-    - Pelo menos um caractere especial (ex: @, #, $, !, etc.)
-    """
     if not senha or len(senha) < 8:
         return False, "A senha deve ter pelo menos 8 caracteres."
     if not re.search(r'[A-Z]', senha):
@@ -48,7 +40,7 @@ def validar_senha_forte(senha):
     if not re.search(r'[0-9]', senha):
         return False, "A senha deve conter pelo menos um número."
     if not re.search(r'[^A-Za-z0-9]', senha):
-        return False, "A senha deve conter pelo menos um caractere especial (ex: @, #, $, !, etc.)."
+        return False, "A senha deve conter pelo menos um caractere especial."
     return True, ""
 
 
@@ -92,7 +84,7 @@ class OrdemServico(db.Model):
     __tablename__ = 'ordens_servico'
     id = db.Column(db.Integer, primary_key=True)
     empresa_id = db.Column(db.Integer, db.ForeignKey('empresas.id'), nullable=False, default=1)
-    codigo = db.Column(db.String(20), nullable=False)
+    codigo = db.Column(db.String(30), nullable=False)
     cliente = db.Column(db.String(100), nullable=False)
     telefone = db.Column(db.String(30), nullable=False)
     endereco = db.Column(db.String(200), nullable=False)
@@ -102,6 +94,9 @@ class OrdemServico(db.Model):
     avarias = db.Column(db.Text, nullable=True)
     status = db.Column(db.String(50), nullable=False, default="Em Análise Técnica")
     valor = db.Column(db.String(50), nullable=False, default="A definir")
+    garantia = db.Column(db.String(50), nullable=True, default="90 Dias")
+    termos = db.Column(db.Text, nullable=True,
+                       default="Garantia cobre apenas o componente trocado. Aparelhos não retirados em 90 dias serão descartados.")
 
 
 # --- MIGRAÇÃO AUTOMÁTICA E INICIALIZAÇÃO ---
@@ -117,6 +112,8 @@ with app.app_context():
         ("ordens_servico", "avarias", "TEXT"),
         ("ordens_servico", "status", "VARCHAR(50) DEFAULT 'Em Análise Técnica'"),
         ("ordens_servico", "valor", "VARCHAR(50) DEFAULT 'A definir'"),
+        ("ordens_servico", "garantia", "VARCHAR(50) DEFAULT '90 Dias'"),
+        ("ordens_servico", "termos", "TEXT"),
         ("clientes", "empresa_id", "INTEGER DEFAULT 1"),
         ("clientes", "endereco", "VARCHAR(200)")
     ]
@@ -324,7 +321,9 @@ def admin():
             "relatorio": os_item.relatorio or "",
             "avarias": avarias_lista,
             "status": os_item.status,
-            "valor": os_item.valor
+            "valor": os_item.valor,
+            "garantia": os_item.garantia or "90 Dias",
+            "termos": os_item.termos or ""
         }
 
     ticket_medio = (faturamento_total / os_concluidas) if os_concluidas > 0 else 0.0
@@ -338,6 +337,19 @@ def admin():
     }
 
     return render_template('admin.html', ordens=ordens_dict, empresa=empresa, metricas=metricas)
+
+
+# --- ROTA DE IMPRESSÃO DA OS ---
+@app.route('/admin/imprimir/<codigo_os>')
+def imprimir_os(codigo_os):
+    if not session.get('tecnico_logado'):
+        return redirect(url_for('login'))
+
+    empresa_id = session.get('empresa_id', 1)
+    empresa = Empresa.query.get(empresa_id)
+    os_item = OrdemServico.query.filter_by(empresa_id=empresa_id, codigo=codigo_os).first_or_404()
+
+    return render_template('imprimir_os.html', empresa=empresa, os=os_item)
 
 
 # --- ROTAS DE API DA OS E CLIENTES ---
@@ -392,14 +404,10 @@ def criar_os():
         return jsonify({"sucesso": False,
                         "mensagem": "Preencha todos os campos obrigatórios (Cliente, Telefone, Aparelho e Defeito)."}), 400
 
-    # Conta quantas OS esta empresa específica já tem para criar uma sequência limpa e única
     total_os_empresa = OrdemServico.query.filter_by(empresa_id=empresa_id).count()
     proximo_num = 1025 + total_os_empresa + 1
-
-    # Inclui o ID da empresa no código (Ex: OS-3-1026) para isolar completamente entre as lojas no banco PostgreSQL
     codigo_os = f"OS-{empresa_id}-{proximo_num}"
 
-    # Loop de segurança extra caso o código exato já exista
     while OrdemServico.query.filter_by(codigo=codigo_os).first():
         proximo_num += 1
         codigo_os = f"OS-{empresa_id}-{proximo_num}"
@@ -420,7 +428,9 @@ def criar_os():
             relatorio=dados.get('relatorio', ''),
             avarias=avarias_str,
             status=dados.get('status', 'Em Análise Técnica'),
-            valor=dados.get('valor', 'A definir')
+            valor=dados.get('valor', 'A definir'),
+            garantia=dados.get('garantia', '90 Dias'),
+            termos=dados.get('termos', 'Garantia cobre apenas o componente trocado.')
         )
         db.session.add(nova_os)
         db.session.commit()
@@ -432,6 +442,7 @@ def criar_os():
         db.session.rollback()
         return jsonify({"sucesso": False, "mensagem": f"Erro ao criar OS no banco de dados: {str(e)}"}), 500
 
+
 @app.route('/api/consultar-os', methods=['POST'])
 def consultar_os():
     dados = request.get_json() or {}
@@ -442,14 +453,9 @@ def consultar_os():
     if not numero_os:
         return jsonify({"sucesso": False, "mensagem": "Informe o número da OS."})
 
-    if not numero_os.startswith('OS-') and numero_os.isdigit():
-        numero_os_formatado = f"OS-{numero_os}"
-    else:
-        numero_os_formatado = numero_os
-
     os_item = OrdemServico.query.filter(
         OrdemServico.empresa_id == empresa_id,
-        (OrdemServico.codigo == numero_os_formatado) | (OrdemServico.codigo == numero_os)
+        (OrdemServico.codigo == numero_os) | (OrdemServico.codigo.ilike(f"%{numero_os}"))
     ).first()
 
     if not os_item:
@@ -463,7 +469,8 @@ def consultar_os():
             "sucesso": True, "codigo": os_item.codigo, "cliente": os_item.cliente,
             "aparelho": os_item.aparelho, "defeito": os_item.defeito, "status": os_item.status,
             "valor": os_item.valor, "relatorio": os_item.relatorio or "Em avaliação",
-            "mensagem": f"Aparelho: {os_item.aparelho} | Status: {os_item.status}"
+            "garantia": os_item.garantia, "termos": os_item.termos,
+            "mensagem": f"Aparelho: {os_item.aparelho} | Status: {os_item.status} | Garantia: {os_item.garantia}"
         })
     else:
         return jsonify({"sucesso": False, "mensagem": "Os 4 últimos dígitos do telefone não conferem."})
@@ -489,6 +496,8 @@ def editar_os():
     os_item.avarias = ", ".join(avarias_lista) if isinstance(avarias_lista, list) else str(avarias_lista)
     os_item.status = dados.get('status', os_item.status)
     os_item.valor = dados.get('valor', os_item.valor)
+    os_item.garantia = dados.get('garantia', os_item.garantia)
+    os_item.termos = dados.get('termos', os_item.termos)
     db.session.commit()
 
     salvar_ou_atualizar_cliente(empresa_id, os_item.cliente, os_item.telefone, os_item.endereco)
@@ -538,7 +547,7 @@ def mudar_senha():
         return jsonify({"sucesso": False, "mensagem": "A senha atual está incorreta."})
 
 
-# --- SUPER ADMIN (SENHA MESTRE VIA VARIÁVEL DE AMBIENTE) ---
+# --- SUPER ADMIN ---
 
 @app.route('/super-admin', methods=['GET', 'POST'])
 def super_admin():

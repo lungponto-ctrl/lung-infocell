@@ -172,7 +172,7 @@ with app.app_context():
 
 
 def verificar_vencimento_empresa(empresa):
-    if not empresa.data_vencimento:
+    if not empresa or not empresa.data_vencimento:
         return True
     try:
         vencimento = datetime.strptime(empresa.data_vencimento, "%d/%m/%Y")
@@ -230,9 +230,10 @@ def cadastro_loja():
             return jsonify(
                 {"sucesso": False, "mensagem": "Já existe uma loja com esse identificador (slug). Escolha outro."})
 
+        # --- TRIAL DE 7 DIAS AUTOMÁTICO ---
         hoje = datetime.now()
         data_criacao_str = hoje.strftime("%d/%m/%Y")
-        data_venc_str = (hoje + timedelta(days=30)).strftime("%d/%m/%Y")  # 30 dias grátis/iniciais
+        data_venc_str = (hoje + timedelta(days=7)).strftime("%d/%m/%Y")
 
         nova_empresa = Empresa(
             nome=nome,
@@ -241,7 +242,7 @@ def cadastro_loja():
             endereco=endereco,
             cor_primaria=cor_primaria,
             servicos=servicos_str,
-            ativo=False,
+            ativo=True,  # Liberado imediatamente para teste
             data_criacao=data_criacao_str,
             data_vencimento=data_venc_str
         )
@@ -257,7 +258,7 @@ def cadastro_loja():
 
         return jsonify({
             "sucesso": True,
-            "mensagem": "Cadastro realizado com sucesso! Sua loja está aguardando liberação para ser ativada.",
+            "mensagem": "Cadastro realizado com sucesso! Seus 7 dias de teste grátis já foram ativados.",
             "slug": slug
         })
 
@@ -294,7 +295,7 @@ def login():
         if tecnico:
             empresa_tec = Empresa.query.get(tecnico.empresa_id)
             if not verificar_vencimento_empresa(empresa_tec):
-                erro = "O plano desta loja expirou ou está inativo. Entre em contato com o suporte."
+                erro = "O período de teste ou plano mensal desta loja expirou. Entre em contato com o suporte."
             else:
                 session['tecnico_logado'] = True
                 session['empresa_id'] = tecnico.empresa_id
@@ -617,8 +618,10 @@ def super_painel():
             "id": emp.id,
             "nome": emp.nome,
             "slug": emp.slug,
-            "telefone": emp.telefone_whatsapp,
+            "telefone_whatsapp": emp.telefone_whatsapp,
             "endereco": emp.endereco,
+            "cor_primaria": emp.cor_primaria,
+            "servicos": emp.servicos,
             "ativo": emp.ativo,
             "data_criacao": emp.data_criacao or "Não registrada",
             "data_vencimento": emp.data_vencimento or "Não definida",
@@ -648,7 +651,7 @@ def super_criar_loja():
 
     hoje = datetime.now()
     data_criacao_str = hoje.strftime("%d/%m/%Y")
-    data_venc_str = (hoje + timedelta(days=30)).strftime("%d/%m/%Y")
+    data_venc_str = dados.get('data_vencimento') or (hoje + timedelta(days=7)).strftime("%d/%m/%Y")
 
     nova = Empresa(
         nome=dados.get('nome'),
@@ -697,7 +700,6 @@ def super_editar_loja():
     empresa.cor_primaria = dados.get('cor_primaria', empresa.cor_primaria)
     empresa.servicos = ",".join(servicos_lista) if isinstance(servicos_lista, list) else str(servicos_lista)
 
-    # Se enviou nova data de vencimento pelo painel mestre
     if dados.get('data_vencimento'):
         empresa.data_vencimento = dados.get('data_vencimento')
 

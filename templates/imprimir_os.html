@@ -48,6 +48,8 @@
 
     <div class="section">
         <h3>Laudo Técnico e Valores</h3>
+        <p><strong>Data de Entrada:</strong> {{ os.data_criacao or 'N/A' }}</p>
+        <p><strong>Última Atualização:</strong> {{ os.data_atualizacao or 'N/A' }}</p>
         <p><strong>Relatório Técnico:</strong> {{ os.relatorio or 'Em avaliação' }}</p>
         <p><strong>Status Atual:</strong> {{ os.status }}</p>
         <p><strong>Valor do Serviço:</strong> {{ os.valor }}</p>
@@ -56,7 +58,7 @@
 
     <div class="section">
         <h3>Termos e Condições</h3>
-        <p style="font-size: 11px; line-height: 1.4;">{{ os.termos }}</p>
+        <p style="font-size: 11px; line-height: 1.4; white-space: pre-line;">{{ os.termos }}</p>
     </div>
 
     <div class="assinatura">

@@ -303,6 +303,8 @@ Para solicitar a garantia, entre em contato com a nossa loja e apresente o núme
                             <span style="font-size: 12px; background: #333; padding: 3px 8px; border-radius: 4px; color: #ffcc00; font-weight: bold;">{{ os.status }}</span>
                         </div>
                         <div class="os-detalhes">
+                            <p>📅 <strong>Entrada:</strong> {{ os.data_criacao }}</p>
+                            <p>🔄 <strong>Última Alteração:</strong> {{ os.data_atualizacao }}</p>
                             <p>👤 <strong>Cliente:</strong> {{ os.cliente }} ({{ os.telefone }})</p>
                             <p>📱 <strong>Aparelho:</strong> {{ os.aparelho }}</p>
                             <p>⚠️ <strong>Defeito Relatado:</strong> {{ os.defeito }}</p>

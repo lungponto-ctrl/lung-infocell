@@ -1,5 +1,6 @@
 import os
 import re
+from datetime import datetime
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 
@@ -95,8 +96,9 @@ class OrdemServico(db.Model):
     status = db.Column(db.String(50), nullable=False, default="Em Análise Técnica")
     valor = db.Column(db.String(50), nullable=False, default="A definir")
     garantia = db.Column(db.String(50), nullable=True, default="90 Dias")
-    termos = db.Column(db.Text, nullable=True,
-                       default="Nossa loja oferece 90 dias de garantia sobre os serviços realizados e as peças substituídas, conforme a legislação vigente.\n\n✅ A garantia cobre defeitos relacionados ao serviço executado ou às peças substituídas.\n\n⚠️ A garantia poderá não cobrir:\n- Danos causados por quedas, impactos ou mau uso;\n- Danos por contato com líquidos ou oxidação posterior;\n- Novos defeitos sem relação com o reparo efetuado;\n- Danos decorrentes de intervenções de terceiros.\n\n📌 Cada situação será avaliada tecnicamente, respeitando os direitos do consumidor previstos em lei.")
+    termos = db.Column(db.Text, nullable=True)
+    data_criacao = db.Column(db.String(30), nullable=True)
+    data_atualizacao = db.Column(db.String(30), nullable=True)
 
 
 # --- MIGRAÇÃO AUTOMÁTICA E INICIALIZAÇÃO ---
@@ -114,6 +116,8 @@ with app.app_context():
         ("ordens_servico", "valor", "VARCHAR(50) DEFAULT 'A definir'"),
         ("ordens_servico", "garantia", "VARCHAR(50) DEFAULT '90 Dias'"),
         ("ordens_servico", "termos", "TEXT"),
+        ("ordens_servico", "data_criacao", "VARCHAR(30)"),
+        ("ordens_servico", "data_atualizacao", "VARCHAR(30)"),
         ("clientes", "empresa_id", "INTEGER DEFAULT 1"),
         ("clientes", "endereco", "VARCHAR(200)")
     ]
@@ -323,7 +327,9 @@ def admin():
             "status": os_item.status,
             "valor": os_item.valor,
             "garantia": os_item.garantia or "90 Dias",
-            "termos": os_item.termos or ""
+            "termos": os_item.termos or "",
+            "data_criacao": os_item.data_criacao or "Não registrada",
+            "data_atualizacao": os_item.data_atualizacao or os_item.data_criacao or "Não registrada"
         }
 
     ticket_medio = (faturamento_total / os_concluidas) if os_concluidas > 0 else 0.0
@@ -416,6 +422,8 @@ def criar_os():
     avarias_str = ", ".join(avarias_lista) if isinstance(avarias_lista, list) else str(avarias_lista)
     end_cliente = dados.get('endereco', '')
 
+    agora_str = datetime.now().strftime("%d/%m/%Y %H:%M")
+
     default_termos = "Nossa loja oferece 90 dias de garantia sobre os serviços realizados e as peças substituídas, conforme a legislação vigente.\n\n✅ A garantia cobre defeitos relacionados ao serviço executado ou às peças substituídas.\n\n⚠️ A garantia poderá não cobrir:\n- Danos causados por quedas, impactos ou mau uso;\n- Danos por contato com líquidos ou oxidação posterior;\n- Novos defeitos sem relação com o reparo efetuado;\n- Danos decorrentes de intervenções de terceiros.\n\n📌 Cada situação será avaliada tecnicamente, respeitando os direitos do consumidor previstos em lei."
 
     try:
@@ -432,7 +440,9 @@ def criar_os():
             status=dados.get('status', 'Em Análise Técnica'),
             valor=dados.get('valor', 'A definir'),
             garantia=dados.get('garantia', '90 Dias'),
-            termos=dados.get('termos', default_termos)
+            termos=dados.get('termos', default_termos),
+            data_criacao=agora_str,
+            data_atualizacao=agora_str
         )
         db.session.add(nova_os)
         db.session.commit()
@@ -472,6 +482,8 @@ def consultar_os():
             "aparelho": os_item.aparelho, "defeito": os_item.defeito, "status": os_item.status,
             "valor": os_item.valor, "relatorio": os_item.relatorio or "Em avaliação",
             "garantia": os_item.garantia, "termos": os_item.termos,
+            "data_criacao": os_item.data_criacao or "Não registrada",
+            "data_atualizacao": os_item.data_atualizacao or os_item.data_criacao or "Não registrada",
             "mensagem": f"Aparelho: {os_item.aparelho} | Status: {os_item.status} | Garantia: {os_item.garantia}"
         })
     else:
@@ -496,7 +508,13 @@ def editar_os():
     os_item.defeito = dados.get('defeito', os_item.defeito)
     os_item.relatorio = dados.get('relatorio', os_item.relatorio)
     os_item.avarias = ", ".join(avarias_lista) if isinstance(avarias_lista, list) else str(avarias_lista)
-    os_item.status = dados.get('status', os_item.status)
+
+    # Atualiza a data/hora sempre que houver modificação (status ou dados)
+    novo_status = dados.get('status', os_item.status)
+    if os_item.status != novo_status or True:
+        os_item.data_atualizacao = datetime.now().strftime("%d/%m/%Y %H:%M")
+
+    os_item.status = novo_status
     os_item.valor = dados.get('valor', os_item.valor)
     os_item.garantia = dados.get('garantia', os_item.garantia)
     os_item.termos = dados.get('termos', os_item.termos)

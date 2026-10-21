@@ -18,6 +18,9 @@
         .btn-primary:hover, .btn-consultar:hover { filter: brightness(0.85); }
         .consult-card { border-top: 4px solid var(--cor-primaria) !important; }
         .service-card:hover { border-color: var(--cor-primaria) !important; }
+        @media (max-width: 768px) {
+            .orc-grid { grid-template-columns: 1fr !important; }
+        }
     </style>
 </head>
 <body>
@@ -48,6 +51,34 @@
             <a href="#consultar" class="btn-primary"><i class="fa-solid fa-magnifying-glass"></i> Consultar Ordem de Serviço</a>
         </div>
     </section>
+
+    <!-- SECÇÃO DE PEDIDO DE ORÇAMENTO -->
+    <div style="background: #1e1e1e; padding: 25px; border-radius: 8px; border: 1px solid #2a2a2a; margin: 30px auto; max-width: 800px; border-top: 4px solid var(--cor-primaria); box-shadow: 0 4px 10px rgba(0,0,0,0.3); box-sizing: border-box;">
+        <h3 style="color: #fff; margin-top: 0; margin-bottom: 15px; font-size: 18px;"><i class="fa-solid fa-calculator"></i> Solicite um Orçamento Rápido</h3>
+        <p style="color: #aaa; font-size: 14px; margin-bottom: 20px;">Tem um aparelho com defeito? Preencha os dados abaixo e fale diretamente com o nosso técnico pelo WhatsApp!</p>
+
+        <div class="orc-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; margin-bottom: 5px; font-size: 13px; color: #aaa;">Seu Nome</label>
+                <input type="text" id="orc_nome" placeholder="Digite seu nome" style="width: 100%; padding: 10px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 6px; box-sizing: border-box; font-size: 14px;">
+            </div>
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; margin-bottom: 5px; font-size: 13px; color: #aaa;">Seu Telefone / WhatsApp</label>
+                <input type="text" id="orc_telefone" placeholder="ex: 31999998888" style="width: 100%; padding: 10px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 6px; box-sizing: border-box; font-size: 14px;">
+            </div>
+        </div>
+        <div style="margin-bottom: 12px;">
+            <label style="display: block; margin-bottom: 5px; font-size: 13px; color: #aaa;">Aparelho / Modelo</label>
+            <input type="text" id="orc_aparelho" placeholder="ex: iPhone 11, Samsung A32, Notebook..." style="width: 100%; padding: 10px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 6px; box-sizing: border-box; font-size: 14px;">
+        </div>
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-size: 13px; color: #aaa;">Qual o defeito ou problema?</label>
+            <textarea id="orc_defeito" rows="3" placeholder="Descreva o que está acontecendo com o aparelho..." style="width: 100%; padding: 10px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 6px; box-sizing: border-box; font-size: 14px; resize: vertical;"></textarea>
+        </div>
+        <button type="button" onclick="enviarOrcamentoWhatsApp()" style="background-color: #25d366; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-weight: bold; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <i class="fa-brands fa-whatsapp" style="font-size: 18px;"></i> Enviar Pedido de Orçamento via WhatsApp
+        </button>
+    </div>
 
     <!-- Secção de Serviços Dinâmica -->
     <section id="servicos" class="services">
@@ -123,7 +154,7 @@
         <p>&copy; 2026 {{ empresa.nome }} - Powered by <strong>BancadaPro SaaS</strong></p>
     </footer>
 
-    <!-- Script de Consulta de OS -->
+    <!-- Scripts da Página -->
     <script>
         document.getElementById('formConsultarOS').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -165,6 +196,32 @@
                 resultadoBox.innerHTML = `<p>Erro ao consultar. Tente novamente mais tarde.</p>`;
             }
         });
+
+        function enviarOrcamentoWhatsApp() {
+            let nome = document.getElementById('orc_nome').value.trim();
+            let telefone = document.getElementById('orc_telefone').value.trim();
+            let aparelho = document.getElementById('orc_aparelho').value.trim();
+            let defeito = document.getElementById('orc_defeito').value.trim();
+
+            if (!nome || !telefone || !aparelho || !defeito) {
+                alert("Por favor, preencha todos os campos para solicitar o orçamento.");
+                return;
+            }
+
+            let whatsappLoja = "{{ empresa.telefone_whatsapp }}".replace(/\D/g, '');
+            if (!whatsappLoja.startsWith('55')) {
+                whatsappLoja = '55' + whatsappLoja;
+            }
+
+            let mensagem = `Olá! Gostaria de solicitar um orçamento.\n\n` +
+                           `👤 *Nome:* ${nome}\n` +
+                           `📱 *Aparelho:* ${aparelho}\n` +
+                           `⚠️ *Defeito:* ${defeito}\n` +
+                           `📞 *Contato:* ${telefone}`;
+
+            let urlWp = `https://wa.me/${whatsappLoja}?text=${encodeURIComponent(mensagem)}`;
+            window.open(urlWp, '_blank');
+        }
     </script>
 </body>
 </html>

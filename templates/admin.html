@@ -134,6 +134,8 @@
         .btn-os-editar:hover { background: #ec971f; }
         .btn-os-excluir { background: #d9534f; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; }
         .btn-os-excluir:hover { background: #c9302c; }
+        .btn-os-imprimir { background: #0275d8; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-os-imprimir:hover { background: #025aa5; }
         .btn-os-whatsapp { background: #25d366; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
         .btn-os-whatsapp:hover { background: #20ba5a; }
 
@@ -226,6 +228,14 @@
                         <input type="text" id="valor" placeholder="ex: 250,00 ou A definir" value="A definir" required>
                     </div>
                     <div class="form-group">
+                        <label>Tempo de Garantia</label>
+                        <input type="text" id="garantia" placeholder="ex: 90 Dias" value="90 Dias" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Termos e Condições de Garantia</label>
+                        <textarea id="termos" rows="2" placeholder="Termos aplicados à OS...">Garantia cobre apenas o componente trocado. Aparelhos não retirados em 90 dias serão descartados.</textarea>
+                    </div>
+                    <div class="form-group">
                         <label>Status Atual</label>
                         <select id="status">
                             <option value="Em Análise Técnica">Em Análise Técnica</option>
@@ -285,15 +295,20 @@
                             <p>📋 <strong>Checklist / Avarias:</strong> {{ avarias_str }}</p>
                             <p>🛠️ <strong>Relatório Técnico:</strong> {{ os.relatorio or 'Ainda não avaliado' }}</p>
                             <p>💰 <strong>Valor:</strong> {{ os.valor }}</p>
+                            <p>🛡️ <strong>Garantia:</strong> {{ os.garantia }}</p>
+                            <p style="font-size: 11px; color: #888;">📜 <strong>Termos:</strong> {{ os.termos }}</p>
                         </div>
                         <div class="os-acoes">
-                            <button class="btn-os-editar" onclick="prepararEdicaoOS('{{ codigo }}', '{{ os.cliente }}', '{{ os.telefone }}', '{{ os.endereco }}', '{{ os.aparelho }}', '{{ os.defeito }}', '{{ avarias_str }}', '{{ os.relatorio or '' }}', '{{ os.valor }}', '{{ os.status }}')">
+                            <a href="{{ url_for('imprimir_os', codigo_os=codigo) }}" target="_blank" class="btn-os-imprimir">
+                                <i class="fa-solid fa-print"></i> Imprimir OS
+                            </a>
+                            <button class="btn-os-editar" onclick="prepararEdicaoOS('{{ codigo }}', '{{ os.cliente }}', '{{ os.telefone }}', '{{ os.endereco }}', '{{ os.aparelho }}', '{{ os.defeito }}', '{{ avarias_str }}', '{{ os.relatorio or '' }}', '{{ os.valor }}', '{{ os.garantia }}', '{{ os.termos }}', '{{ os.status }}')">
                                 <i class="fa-solid fa-pen"></i> Editar
                             </button>
                             <button class="btn-os-excluir" onclick="excluirOS('{{ codigo }}')">
                                 <i class="fa-solid fa-trash"></i> Excluir
                             </button>
-                            <a href="#" class="btn-os-whatsapp" onclick="enviarWhatsApp('{{ os.telefone }}', '{{ codigo }}', '{{ os.cliente }}', '{{ os.aparelho }}', '{{ os.defeito }}', '{{ avarias_str }}', '{{ os.status }}', '{{ os.valor }}', '{{ os.relatorio or "Em avaliação" }}')">
+                            <a href="#" class="btn-os-whatsapp" onclick="enviarWhatsApp('{{ os.telefone }}', '{{ codigo }}', '{{ os.cliente }}', '{{ os.aparelho }}', '{{ os.defeito }}', '{{ avarias_str }}', '{{ os.status }}', '{{ os.valor }}', '{{ os.garantia }}', '{{ os.termos }}', '{{ os.relatorio or "Em avaliação" }}')">
                                 <i class="fa-brands fa-whatsapp"></i> Enviar WhatsApp
                             </a>
                         </div>
@@ -340,7 +355,7 @@
             });
         }
 
-        function enviarWhatsApp(telefoneCliente, codigo, cliente, aparelho, defeito, avarias, status, valor, relatorio) {
+        function enviarWhatsApp(telefoneCliente, codigo, cliente, aparelho, defeito, avarias, status, valor, garantia, termos, relatorio) {
             let telLimpo = telefoneCliente.replace(/\D/g, '');
             if (!telLimpo.startsWith('55')) {
                 telLimpo = '55' + telLimpo;
@@ -356,7 +371,9 @@
                            `• *Checklist Entrada:* ${avarias}\n` +
                            `• *Status Atual:* *${status}*\n` +
                            `• *Diagnóstico Técnico:* ${relatorio}\n` +
-                           `• *Valor / Orçamento:* ${valor}\n\n` +
+                           `• *Valor / Orçamento:* ${valor}\n` +
+                           `• *Garantia:* ${garantia}\n` +
+                           `• *Termos:* ${termos}\n\n` +
                            `🔍 *Como consultar o andamento no site:*\n` +
                            `1. Acesse: ${urlSite}\n` +
                            `2. Vá em *Consultar Ordem de Serviço*\n` +
@@ -367,7 +384,7 @@
             window.open(urlWhatsApp, '_blank');
         }
 
-        function prepararEdicaoOS(codigo, cliente, telefone, endereco, aparelho, defeito, avariasStr, relatorio, valor, status) {
+        function prepararEdicaoOS(codigo, cliente, telefone, endereco, aparelho, defeito, avariasStr, relatorio, valor, garantia, termos, status) {
             document.getElementById('codigo_os').value = codigo;
             document.getElementById('cliente').value = cliente;
             document.getElementById('telefone').value = telefone;
@@ -376,6 +393,8 @@
             document.getElementById('defeito').value = defeito;
             document.getElementById('relatorio').value = relatorio;
             document.getElementById('valor').value = valor;
+            document.getElementById('garantia').value = garantia;
+            document.getElementById('termos').value = termos;
             document.getElementById('status').value = status;
 
             const listaAvarias = avariasStr.split(',').map(a => a.trim());
@@ -393,6 +412,8 @@
             document.getElementById('codigo_os').value = '';
             document.getElementById('formOS').reset();
             document.getElementById('valor').value = 'A definir';
+            document.getElementById('garantia').value = '90 Dias';
+            document.getElementById('termos').value = 'Garantia cobre apenas o componente trocado. Aparelhos não retirados em 90 dias serão descartados.';
             document.querySelectorAll('input[name="avaria"]').forEach(cb => cb.checked = false);
             document.getElementById('tituloFormOS').innerHTML = '<i class="fa-solid fa-plus-circle"></i> Abrir Nova Ordem de Serviço';
             document.getElementById('btnSalvarOS').innerText = "Gerar Ordem de Serviço";
@@ -410,6 +431,8 @@
             const defeitoCliente = document.getElementById('defeito').value;
             const relatorioCliente = document.getElementById('relatorio').value;
             const valorCliente = document.getElementById('valor').value;
+            const garantiaCliente = document.getElementById('garantia').value;
+            const termosCliente = document.getElementById('termos').value;
 
             const avariasSelecionadas = [];
             document.querySelectorAll('input[name="avaria"]:checked').forEach((cb) => {
@@ -426,6 +449,8 @@
                 avarias: avariasSelecionadas,
                 relatorio: relatorioCliente,
                 valor: valorCliente,
+                garantia: garantiaCliente,
+                termos: termosCliente,
                 status: statusSelecionado
             };
 
@@ -440,11 +465,10 @@
             const resultado = await resposta.json();
 
             if (resultado.sucesso) {
-                // SE O STATUS FOR "Pronto para Retirada", dispara o aviso automático para o WhatsApp!
                 if (statusSelecionado === "Pronto para Retirada") {
                     if (confirm("Ordem salva com sucesso! O aparelho está 'Pronto para Retirada'. Deseja abrir o WhatsApp agora para enviar a mensagem automática ao cliente?")) {
                         const avariasStr = avariasSelecionadas.join(', ');
-                        enviarWhatsApp(telefoneCliente, resultado.codigo_os || codigoOS, nomeCliente, aparelhoCliente, defeitoCliente, avariasStr, statusSelecionado, valorCliente, relatorioCliente || "Aparelho reparado e pronto!");
+                        enviarWhatsApp(telefoneCliente, resultado.codigo_os || codigoOS, nomeCliente, aparelhoCliente, defeitoCliente, avariasStr, statusSelecionado, valorCliente, garantiaCliente, termosCliente, relatorioCliente || "Aparelho reparado e pronto!");
                     }
                 } else {
                     alert(resultado.mensagem);

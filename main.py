@@ -195,10 +195,8 @@ def get_empresa_atual():
 
 @app.route('/')
 def home():
-    empresa = get_empresa_atual()
-    if not empresa or not verificar_vencimento_empresa(empresa):
-        return render_template('aguardando_ativacao.html', empresa=empresa)
-    return render_template('index.html', empresa=empresa)
+    # A raiz do domínio do SaaS exibe diretamente a página neutra de cadastro
+    return render_template('cadastro.html')
 
 
 @app.route('/cadastro', methods=['GET', 'POST'])
@@ -230,7 +228,7 @@ def cadastro_loja():
             return jsonify(
                 {"sucesso": False, "mensagem": "Já existe uma loja com esse identificador (slug). Escolha outro."})
 
-        # --- TRIAL DE 7 DIAS AUTOMÁTICO ---
+        # --- APLICAÇÃO AUTOMÁTICA DOS 7 DIAS GRÁTIS DE TESTE ---
         hoje = datetime.now()
         data_criacao_str = hoje.strftime("%d/%m/%Y")
         data_venc_str = (hoje + timedelta(days=7)).strftime("%d/%m/%Y")
@@ -242,7 +240,7 @@ def cadastro_loja():
             endereco=endereco,
             cor_primaria=cor_primaria,
             servicos=servicos_str,
-            ativo=True,  # Liberado imediatamente para teste
+            ativo=True,  # Libera imediatamente para teste[cite: 5]
             data_criacao=data_criacao_str,
             data_vencimento=data_venc_str
         )
@@ -258,7 +256,7 @@ def cadastro_loja():
 
         return jsonify({
             "sucesso": True,
-            "mensagem": "Cadastro realizado com sucesso! Seus 7 dias de teste grátis já foram ativados.",
+            "mensagem": "Cadastro realizado com sucesso! Seus 7 dias de teste grátis já foram ativados[cite: 5].",
             "slug": slug
         })
 

@@ -4,38 +4,263 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel do Técnico - {{ empresa.nome }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --cor-primaria: {{ empresa.cor_primaria if empresa and empresa.cor_primaria else '#ff3b30' }};
         }
-        .dica-campo {
-            font-size: 11px;
-            color: #888;
-            margin-top: 3px;
-            display: block;
+        body.admin-body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .admin-header {
+            background: #1e1e1e;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid var(--cor-primaria);
+        }
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo-container h2 {
+            margin: 0;
+            color: #fff;
+            font-size: 20px;
+        }
+        .admin-actions {
+            display: flex;
+            gap: 15px;
+        }
+        .btn-site, .btn-logout {
+            background: #2a2a2a;
+            color: #fff;
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 13px;
+            border: 1px solid #444;
+        }
+        .btn-logout:hover { background: #d32f2f; border-color: #d32f2f; }
+        .admin-container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
         }
         .banner-trial {
             background: #2a2a1e;
             border: 1px solid #ffcc00;
             color: #ffcc00;
-            padding: 10px 15px;
+            padding: 12px 20px;
             border-radius: 6px;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             font-size: 13px;
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .metric-card {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            text-align: center;
+        }
+        .metric-card p {
+            margin: 0 0 8px 0;
+            font-size: 11px;
+            color: #888;
+            font-weight: bold;
+        }
+        .metric-card h3 {
+            margin: 0;
+            font-size: 22px;
+            color: #fff;
+        }
+        .admin-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        @media(max-width: 900px) {
+            .admin-grid { grid-template-columns: 1fr; }
+        }
+        .form-section, .list-section {
+            background: #1e1e1e;
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        .form-section h3, .list-section h3 {
+            margin-top: 0;
+            color: #fff;
+            font-size: 18px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 13px;
+            color: #ccc;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 13px;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--cor-primaria);
+            outline: none;
+        }
+        .dica-campo {
+            font-size: 11px;
+            color: #888;
+            margin-top: 4px;
+            display: block;
+        }
+        .checklist-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 5px;
+            background: #252525;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #383838;
+        }
+        .checklist-grid label {
+            font-weight: normal;
+            color: #ddd;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+        .btn-submit {
+            background-color: var(--cor-primaria);
+            color: #fff;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 15px;
+            margin-top: 10px;
+        }
+        .btn-submit:hover { opacity: 0.9; }
+        .btn-cancelar {
+            background: #444;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        .btn-secondary {
+            background: #333;
+            color: #fff;
+            border: 1px solid #554;
+            padding: 10px;
+            width: 100%;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .search-box {
+            margin-bottom: 20px;
+        }
+        .ordens-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-height: 700px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        .os-card {
+            background: #252525;
+            border: 1px solid #383838;
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .os-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+        }
+        .os-card-header h4 { margin: 0; color: #fff; font-size: 15px; }
+        .status-badge {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: #333;
+            color: #ffcc00;
+            font-weight: bold;
+        }
+        .os-card p {
+            margin: 5px 0;
+            font-size: 13px;
+            color: #bbb;
+        }
+        .os-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid #333;
+        }
+        .btn-action {
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-print { background: #333; color: #fff; }
+        .btn-edit { background: #0277bd; color: #fff; }
+        .btn-delete { background: #c62828; color: #fff; }
+        .btn-whatsapp-os { background: #2e7d32; color: #fff; }
     </style>
 </head>
 <body class="admin-body">
 
     <!-- CABEÇALHO ADMIN -->
-    <header class="admin-header" style="border-bottom: 3px solid var(--cor-primaria);">
+    <header class="admin-header">
         <div class="logo-container">
-            <i class="fa-solid fa-microchip logo-icon" style="color: var(--cor-primaria);"></i>
+            <i class="fa-solid fa-microchip logo-icon" style="color: var(--cor-primaria); font-size: 24px;"></i>
             <h2>Painel do Técnico - <span>{{ empresa.nome }}</span></h2>
         </div>
         <div class="admin-actions">
@@ -114,7 +339,7 @@
 
                     <div class="form-group">
                         <label>Checklist de Entrada / Estado do Aparelho</label>
-                        <div class="checklist-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px;">
+                        <div class="checklist-grid">
                             <label><input type="checkbox" class="chk-avaria" value="Tela Trincada"> Tela Trincada</label>
                             <label><input type="checkbox" class="chk-avaria" value="Marcas de Uso / Riscos"> Marcas de Uso / Riscos</label>
                             <label><input type="checkbox" class="chk-avaria" value="Tampa Traseira Danificada"> Tampa Traseira Danificada</label>
@@ -161,7 +386,7 @@
                         <span class="dica-campo">💡 Ao mudar para 'Pronto para Retirada' ou 'Entregue', o valor entra para o Faturamento Total e Ticket Médio.</span>
                     </div>
 
-                    <button type="submit" id="btnSalvarOS" class="btn-submit" style="background-color: var(--cor-primaria);">Gerar Ordem de Serviço</button>
+                    <button type="submit" id="btnSalvarOS" class="btn-submit">Gerar Ordem de Serviço</button>
                     <button type="button" id="btnCancelarEdicao" class="btn-cancelar" style="display: none;" onclick="resetarFormularioOS()">Cancelar Edição</button>
                 </form>
 
@@ -193,7 +418,7 @@
                     <div class="os-card" data-codigo="{{ codigo }}" data-cliente="{{ os.cliente }}">
                         <div class="os-card-header">
                             <h4>{{ codigo }}</h4>
-                            <span class="status-badge {{ os.status|lower|replace(' ', '-') }}">{{ os.status }}</span>
+                            <span class="status-badge">{{ os.status }}</span>
                         </div>
                         <p>🗓️ <strong>Entrada:</strong> {{ os.data_criacao }}</p>
                         <p>🔄 <strong>Última Alteração:</strong> {{ os.data_atualizacao }}</p>
@@ -225,7 +450,6 @@
     <script>
         const ordensDados = {{ ordens|tojson }};
 
-        // AUTO-COMPLETAR DADOS DO CLIENTE PELO TELEFONE
         document.getElementById('telefone_cliente').addEventListener('blur', async function() {
             const tel = this.value.trim();
             if (tel.length >= 8) {
@@ -242,7 +466,6 @@
             }
         });
 
-        // SALVAR OU EDITAR OS
         document.getElementById('formOS').addEventListener('submit', async function(e) {
             e.preventDefault();
 
@@ -350,7 +573,6 @@
             });
         }
 
-        // ALTERAR SENHA
         document.getElementById('formMudarSenha').addEventListener('submit', async function(e) {
             e.preventDefault();
             const resp = await fetch('/api/mudar-senha', {

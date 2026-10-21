@@ -233,7 +233,21 @@
                     </div>
                     <div class="form-group">
                         <label>Termos e Condições de Garantia</label>
-                        <textarea id="termos" rows="2" placeholder="Termos aplicados à OS...">Garantia cobre apenas o componente trocado. Aparelhos não retirados em 90 dias serão descartados.</textarea>
+                        <textarea id="termos" rows="6" placeholder="Termos aplicados à OS...">Nossa loja oferece 90 dias de garantia sobre os serviços realizados e as peças substituídas, conforme a legislação vigente.
+
+✅ A garantia cobre defeitos relacionados ao serviço executado ou às peças substituídas.
+
+⚠️ A garantia poderá não cobrir:
+- Danos causados por quedas, impactos ou mau uso;
+- Danos por contato com líquidos ou oxidação posterior, quando não relacionados ao serviço realizado;
+- Novos defeitos sem relação com o reparo efetuado;
+- Danos decorrentes de intervenções de terceiros, quando comprovadamente relacionados ao problema apresentado.
+
+📌 Importante: Cada situação será avaliada tecnicamente, respeitando os direitos do consumidor previstos em lei.
+
+Para solicitar a garantia, entre em contato com a nossa loja e apresente o número da Ordem de Serviço (OS).
+
+🔧Qualidade, confiança e compromisso com você!</textarea>
                     </div>
                     <div class="form-group">
                         <label>Status Atual</label>
@@ -296,19 +310,19 @@
                             <p>🛠️ <strong>Relatório Técnico:</strong> {{ os.relatorio or 'Ainda não avaliado' }}</p>
                             <p>💰 <strong>Valor:</strong> {{ os.valor }}</p>
                             <p>🛡️ <strong>Garantia:</strong> {{ os.garantia }}</p>
-                            <p style="font-size: 11px; color: #888;">📜 <strong>Termos:</strong> {{ os.termos }}</p>
+                            <p style="font-size: 11px; color: #888; white-space: pre-line;">📜 <strong>Termos:</strong> {{ os.termos }}</p>
                         </div>
                         <div class="os-acoes">
                             <a href="{{ url_for('imprimir_os', codigo_os=codigo) }}" target="_blank" class="btn-os-imprimir">
                                 <i class="fa-solid fa-print"></i> Imprimir OS
                             </a>
-                            <button class="btn-os-editar" onclick="prepararEdicaoOS('{{ codigo }}', '{{ os.cliente }}', '{{ os.telefone }}', '{{ os.endereco }}', '{{ os.aparelho }}', '{{ os.defeito }}', '{{ avarias_str }}', '{{ os.relatorio or '' }}', '{{ os.valor }}', '{{ os.garantia }}', '{{ os.termos }}', '{{ os.status }}')">
+                            <button class="btn-os-editar" onclick="prepararEdicaoOS('{{ codigo }}', '{{ os.cliente }}', '{{ os.telefone }}', '{{ os.endereco }}', '{{ os.aparelho }}', '{{ os.defeito }}', '{{ avarias_str }}', '{{ os.relatorio or '' }}', '{{ os.valor }}', '{{ os.garantia }}', `{{ os.termos }}`, '{{ os.status }}')">
                                 <i class="fa-solid fa-pen"></i> Editar
                             </button>
                             <button class="btn-os-excluir" onclick="excluirOS('{{ codigo }}')">
                                 <i class="fa-solid fa-trash"></i> Excluir
                             </button>
-                            <a href="#" class="btn-os-whatsapp" onclick="enviarWhatsApp('{{ os.telefone }}', '{{ codigo }}', '{{ os.cliente }}', '{{ os.aparelho }}', '{{ os.defeito }}', '{{ avarias_str }}', '{{ os.status }}', '{{ os.valor }}', '{{ os.garantia }}', '{{ os.termos }}', '{{ os.relatorio or "Em avaliação" }}')">
+                            <a href="#" class="btn-os-whatsapp" onclick="enviarWhatsApp('{{ os.telefone }}', '{{ codigo }}', '{{ os.cliente }}', '{{ os.aparelho }}', '{{ os.defeito }}', '{{ avarias_str }}', '{{ os.status }}', '{{ os.valor }}', '{{ os.garantia }}', `{{ os.termos }}`, '{{ os.relatorio or "Em avaliação" }}')">
                                 <i class="fa-brands fa-whatsapp"></i> Enviar WhatsApp
                             </a>
                         </div>
@@ -413,7 +427,21 @@
             document.getElementById('formOS').reset();
             document.getElementById('valor').value = 'A definir';
             document.getElementById('garantia').value = '90 Dias';
-            document.getElementById('termos').value = 'Garantia cobre apenas o componente trocado. Aparelhos não retirados em 90 dias serão descartados.';
+            document.getElementById('termos').value = `Nossa loja oferece 90 dias de garantia sobre os serviços realizados e as peças substituídas, conforme a legislação vigente.
+
+✅ A garantia cobre defeitos relacionados ao serviço executado ou às peças substituídas.
+
+⚠️ A garantia poderá não cobrir:
+- Danos causados por quedas, impactos ou mau uso;
+- Danos por contato com líquidos ou oxidação posterior, quando não relacionados ao serviço realizado;
+- Novos defeitos sem relação com o reparo efetuado;
+- Danos decorrentes de intervenções de terceiros, quando comprovadamente relacionados ao problema apresentado.
+
+📌 Importante: Cada situação será avaliada tecnicamente, respeitando os direitos do consumidor previstos em lei.
+
+Para solicitar a garantia, entre em contato com a nossa loja e apresente o número da Ordem de Serviço (OS).
+
+🔧Qualidade, confiança e compromisso com você!`;
             document.querySelectorAll('input[name="avaria"]').forEach(cb => cb.checked = false);
             document.getElementById('tituloFormOS').innerHTML = '<i class="fa-solid fa-plus-circle"></i> Abrir Nova Ordem de Serviço';
             document.getElementById('btnSalvarOS').innerText = "Gerar Ordem de Serviço";

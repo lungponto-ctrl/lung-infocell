@@ -383,7 +383,7 @@
                             <option value="Entregue">Entregue (Concluído)</option>
                             <option value="Sem Conserto / Cancelado">Sem Conserto / Cancelado</option>
                         </select>
-                        <span class="dica-campo">💡 Ao mudar para 'Pronto para Retirada' ou 'Entregue', o valor entra para o Faturamento Total e Ticket Médio.</span>
+                        <span class="dica-campo">💡 Ao mudar para 'Pronto para Retirada', o WhatsApp abrirá automaticamente com os dados completos!</span>
                     </div>
 
                     <button type="submit" id="btnSalvarOS" class="btn-submit">Gerar Ordem de Serviço</button>
@@ -436,7 +436,7 @@
                             <a href="{{ url_for('imprimir_os', codigo_os=codigo) }}" target="_blank" class="btn-action btn-print"><i class="fa-solid fa-print"></i> Imprimir OS</a>
                             <button class="btn-action btn-edit" onclick="prepararEdicaoOS('{{ codigo }}')"><i class="fa-solid fa-pen-to-square"></i> Editar</button>
                             <button class="btn-action btn-delete" onclick="excluirOS('{{ codigo }}')"><i class="fa-solid fa-trash"></i> Excluir</button>
-                            <button class="btn-action btn-whatsapp-os" onclick="enviarWhatsAppCliente('{{ os.telefone }}', '{{ codigo }}', '{{ os.cliente }}', '{{ os.status }}', '{{ os.valor }}')"><i class="fa-brands fa-whatsapp"></i> Enviar WhatsApp</button>
+                            <button class="btn-action btn-whatsapp-os" onclick="enviarWhatsAppCompleto('{{ os.telefone }}', '{{ codigo }}', '{{ os.cliente }}', '{{ os.aparelho }}', '{{ os.status }}', '{{ os.valor }}', '{{ os.relatorio|default('Avaliação concluída', true) }}', '{{ os.garantia }}', '{{ os.termos|default('Garantia legal conforme CDC.', true) }}')"><i class="fa-brands fa-whatsapp"></i> Enviar WhatsApp</button>
                         </div>
                     </div>
                     {% endfor %}
@@ -473,19 +473,28 @@
             const avariasSelecionadas = [];
             document.querySelectorAll('.chk-avaria:checked').forEach(chk => avariasSelecionadas.push(chk.value));
 
+            const statusSelecionado = document.getElementById('status_os').value;
+            const telefoneVal = document.getElementById('telefone_cliente').value;
+            const nomeVal = document.getElementById('nome_cliente').value;
+            const aparelhoVal = document.getElementById('aparelho').value;
+            const valorVal = document.getElementById('valor_servico').value;
+            const relatorioVal = document.getElementById('relatorio_tecnico').value;
+            const garantiaVal = document.getElementById('tempo_garantia').value;
+            const termosVal = document.getElementById('termos_garantia').value;
+
             const dados = {
                 codigo_os: codigoEdit,
-                cliente: document.getElementById('nome_cliente').value,
-                telefone: document.getElementById('telefone_cliente').value,
+                cliente: nomeVal,
+                telefone: telefoneVal,
                 endereco: document.getElementById('endereco_cliente').value,
-                aparelho: document.getElementById('aparelho').value,
+                aparelho: aparelhoVal,
                 defeito: document.getElementById('defeito_relatado').value,
                 avarias: avariasSelecionadas,
-                relatorio: document.getElementById('relatorio_tecnico').value,
-                valor: document.getElementById('valor_servico').value,
-                garantia: document.getElementById('tempo_garantia').value,
-                termos: document.getElementById('termos_garantia').value,
-                status: document.getElementById('status_os').value
+                relatorio: relatorioVal,
+                valor: valorVal,
+                garantia: garantiaVal,
+                termos: termosVal,
+                status: statusSelecionado
             };
 
             const url = codigoEdit ? '/api/editar-os' : '/api/criar-os';
@@ -497,7 +506,15 @@
 
             const res = await resp.json();
             alert(res.mensagem);
-            if (res.sucesso) location.reload();
+
+            if (res.sucesso) {
+                // Se o status for "Pronto para Retirada", dispara o WhatsApp completo automaticamente
+                if (statusSelecionado === "Pronto para Retirada") {
+                    const codGerado = res.codigo_os || codigoEdit;
+                    enviarWhatsAppCompleto(telefoneVal, codGerado, nomeVal, aparelhoVal, statusSelecionado, valorVal, relatorioVal, garantiaVal, termosVal);
+                }
+                location.reload();
+            }
         });
 
         function prepararEdicaoOS(codigo) {
@@ -548,16 +565,23 @@
             if (res.sucesso) location.reload();
         }
 
-        function enviarWhatsAppCliente(telefone, codigo, cliente, status, valor) {
+        function enviarWhatsAppCompleto(telefone, codigo, cliente, aparelho, status, valor, relatorio, garantia, termos) {
             let telLimpo = telefone.replace(/\D/g, '');
-            if (!telLimpo.startsWith('55')) telLimpo = '55' + telLimpo;
+            if (!telLimpo.startsWith('55')) {
+                telLimpo = '55' + telLimpo;
+            }
 
-            let msg = `Olá *${cliente}*! Atualização da sua Ordem de Serviço (*${codigo}*):\n\n` +
-                      `📱 *Status Atual:* ${status}\n` +
-                      `💰 *Valor:* ${valor}\n\n` +
-                      `Você pode acompanhar o status completo pelo nosso site!`;
+            let msg = `Olá *${cliente}*! Passando para atualizar sobre a sua Ordem de Serviço (*${codigo}*):\n\n` +
+                      `📱 *Aparelho:* ${aparelho}\n` +
+                      `🔄 *Status Atual:* ${status}\n` +
+                      `🛠️ *Relatório Técnico:* ${relatorio}\n` +
+                      `💰 *Valor / Orçamento:* ${valor}\n` +
+                      `🛡️ *Garantia:* ${garantia}\n\n` +
+                      `📜 *Termos:* ${termos}\n\n` +
+                      `Agradecemos a preferência! Pode vir retirar o seu aparelho na nossa loja.`;
 
-            window.open(`https://wa.me/${telLimpo}?text=${encodeURIComponent(msg)}`, '_blank');
+            let url = `https://wa.me/${telLimpo}?text=${encodeURIComponent(msg)}`;
+            window.open(url, '_blank');
         }
 
         function filtrarOrdens() {

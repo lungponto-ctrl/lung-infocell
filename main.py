@@ -1,6 +1,6 @@
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 
@@ -58,6 +58,8 @@ class Empresa(db.Model):
     cor_primaria = db.Column(db.String(20), nullable=False, default="#ff3b30")
     servicos = db.Column(db.Text, nullable=True, default="tela_bateria,conector,computadores,acessorios")
     ativo = db.Column(db.Boolean, nullable=False, default=False)
+    data_criacao = db.Column(db.String(30), nullable=True)
+    data_vencimento = db.Column(db.String(30), nullable=True)
 
     tecnicos = db.relationship('Tecnico', backref='empresa', lazy=True)
     ordens = db.relationship('OrdemServico', backref='empresa', lazy=True)
@@ -107,6 +109,8 @@ with app.app_context():
 
     colunas_migrar = [
         ("empresas", "ativo", "BOOLEAN DEFAULT 0"),
+        ("empresas", "data_criacao", "VARCHAR(30)"),
+        ("empresas", "data_vencimento", "VARCHAR(30)"),
         ("tecnicos", "empresa_id", "INTEGER DEFAULT 1"),
         ("tecnicos", "usuario", "VARCHAR(50) DEFAULT 'admin'"),
         ("ordens_servico", "empresa_id", "INTEGER DEFAULT 1"),
@@ -130,6 +134,9 @@ with app.app_context():
             db.session.rollback()
 
     empresa_padrao = Empresa.query.filter_by(id=1).first()
+    hoje_str = datetime.now().strftime("%d/%m/%Y")
+    venc_padrao_str = (datetime.now() + timedelta(days=365)).strftime("%d/%m/%Y")
+
     if not empresa_padrao:
         empresa_padrao = Empresa(
             id=1,
@@ -140,14 +147,20 @@ with app.app_context():
             horario="Seg a Sex: 08:00 - 18:00 | Sáb: 08:00 - 12:00",
             cor_primaria="#ff3b30",
             servicos="tela_bateria,conector,computadores,acessorios",
-            ativo=True
+            ativo=True,
+            data_criacao=hoje_str,
+            data_vencimento=venc_padrao_str
         )
         db.session.add(empresa_padrao)
         db.session.commit()
     else:
         if not empresa_padrao.ativo:
             empresa_padrao.ativo = True
-            db.session.commit()
+        if not empresa_padrao.data_criacao:
+            empresa_padrao.data_criacao = hoje_str
+        if not empresa_padrao.data_vencimento:
+            empresa_padrao.data_vencimento = venc_padrao_str
+        db.session.commit()
 
     tecnico = Tecnico.query.filter_by(empresa_id=1).first()
     if not tecnico:
@@ -156,6 +169,21 @@ with app.app_context():
     else:
         tecnico.senha = "Admin@2026"
         db.session.commit()
+
+
+def verificar_vencimento_empresa(empresa):
+    if not empresa.data_vencimento:
+        return True
+    try:
+        vencimento = datetime.strptime(empresa.data_vencimento, "%d/%m/%Y")
+        hoje = datetime.now()
+        if hoje > vencimento:
+            empresa.ativo = False
+            db.session.commit()
+            return False
+    except Exception:
+        pass
+    return empresa.ativo
 
 
 def get_empresa_atual():
@@ -168,8 +196,8 @@ def get_empresa_atual():
 @app.route('/')
 def home():
     empresa = get_empresa_atual()
-    if not empresa or not empresa.ativo:
-        return redirect(url_for('cadastro_loja'))
+    if not empresa or not verificar_vencimento_empresa(empresa):
+        return render_template('aguardando_ativacao.html', empresa=empresa)
     return render_template('index.html', empresa=empresa)
 
 
@@ -202,6 +230,10 @@ def cadastro_loja():
             return jsonify(
                 {"sucesso": False, "mensagem": "Já existe uma loja com esse identificador (slug). Escolha outro."})
 
+        hoje = datetime.now()
+        data_criacao_str = hoje.strftime("%d/%m/%Y")
+        data_venc_str = (hoje + timedelta(days=30)).strftime("%d/%m/%Y")  # 30 dias grátis/iniciais
+
         nova_empresa = Empresa(
             nome=nome,
             slug=slug,
@@ -209,7 +241,9 @@ def cadastro_loja():
             endereco=endereco,
             cor_primaria=cor_primaria,
             servicos=servicos_str,
-            ativo=False
+            ativo=False,
+            data_criacao=data_criacao_str,
+            data_vencimento=data_venc_str
         )
         db.session.add(nova_empresa)
         db.session.commit()
@@ -223,7 +257,7 @@ def cadastro_loja():
 
         return jsonify({
             "sucesso": True,
-            "mensagem": "Cadastro realizado com sucesso! Sua loja está aguardando liberação do pagamento para ser ativada.",
+            "mensagem": "Cadastro realizado com sucesso! Sua loja está aguardando liberação para ser ativada.",
             "slug": slug
         })
 
@@ -234,7 +268,7 @@ def cadastro_loja():
 def home_loja(slug):
     empresa = Empresa.query.filter(db.func.lower(Empresa.slug) == slug.lower()).first_or_404()
 
-    if not empresa.ativo:
+    if not verificar_vencimento_empresa(empresa):
         return render_template('aguardando_ativacao.html', empresa=empresa)
 
     session['empresa_id'] = empresa.id
@@ -247,7 +281,7 @@ def login():
     empresa_id_sessao = session.get('empresa_id', 1)
     empresa = Empresa.query.get(empresa_id_sessao)
 
-    if empresa and not empresa.ativo:
+    if empresa and not verificar_vencimento_empresa(empresa):
         return render_template('aguardando_ativacao.html', empresa=empresa)
 
     if request.method == 'POST':
@@ -259,8 +293,8 @@ def login():
 
         if tecnico:
             empresa_tec = Empresa.query.get(tecnico.empresa_id)
-            if not empresa_tec.ativo:
-                erro = "Esta loja está pendente de ativação/pagamento. Entre em contato com o suporte."
+            if not verificar_vencimento_empresa(empresa_tec):
+                erro = "O plano desta loja expirou ou está inativo. Entre em contato com o suporte."
             else:
                 session['tecnico_logado'] = True
                 session['empresa_id'] = tecnico.empresa_id
@@ -285,7 +319,7 @@ def admin():
     empresa_id = session.get('empresa_id', 1)
     empresa = Empresa.query.get(empresa_id)
 
-    if not empresa.ativo:
+    if not verificar_vencimento_empresa(empresa):
         return render_template('aguardando_ativacao.html', empresa=empresa)
 
     ordens_bd = OrdemServico.query.filter_by(empresa_id=empresa_id).order_by(OrdemServico.id.desc()).all()
@@ -345,7 +379,6 @@ def admin():
     return render_template('admin.html', ordens=ordens_dict, empresa=empresa, metricas=metricas)
 
 
-# --- ROTA DE IMPRESSÃO DA OS ---
 @app.route('/admin/imprimir/<codigo_os>')
 def imprimir_os(codigo_os):
     if not session.get('tecnico_logado'):
@@ -357,8 +390,6 @@ def imprimir_os(codigo_os):
 
     return render_template('imprimir_os.html', empresa=empresa, os=os_item)
 
-
-# --- ROTAS DE API DA OS E CLIENTES ---
 
 @app.route('/api/buscar-cliente', methods=['POST'])
 def buscar_cliente():
@@ -407,8 +438,7 @@ def criar_os():
     defeito = dados.get('defeito')
 
     if not nome_cliente or not tel_cliente or not aparelho or not defeito:
-        return jsonify({"sucesso": False,
-                        "mensagem": "Preencha todos os campos obrigatórios (Cliente, Telefone, Aparelho e Defeito)."}), 400
+        return jsonify({"sucesso": False, "mensagem": "Preencha todos os campos obrigatórios."}), 400
 
     total_os_empresa = OrdemServico.query.filter_by(empresa_id=empresa_id).count()
     proximo_num = 1025 + total_os_empresa + 1
@@ -423,8 +453,7 @@ def criar_os():
     end_cliente = dados.get('endereco', '')
 
     agora_str = datetime.now().strftime("%d/%m/%Y %H:%M")
-
-    default_termos = "Nossa loja oferece 90 dias de garantia sobre os serviços realizados e as peças substituídas, conforme a legislação vigente.\n\n✅ A garantia cobre defeitos relacionados ao serviço executado ou às peças substituídas.\n\n⚠️ A garantia poderá não cobrir:\n- Danos causados por quedas, impactos ou mau uso;\n- Danos por contato com líquidos ou oxidação posterior;\n- Novos defeitos sem relação com o reparo efetuado;\n- Danos decorrentes de intervenções de terceiros.\n\n📌 Cada situação será avaliada tecnicamente, respeitando os direitos do consumidor previstos em lei."
+    default_termos = "Nossa loja oferece 90 dias de garantia sobre os serviços realizados e as peças substituídas, conforme a legislação vigente."
 
     try:
         nova_os = OrdemServico(
@@ -446,13 +475,12 @@ def criar_os():
         )
         db.session.add(nova_os)
         db.session.commit()
-
         salvar_ou_atualizar_cliente(empresa_id, nome_cliente, tel_cliente, end_cliente)
 
         return jsonify({"sucesso": True, "mensagem": "Ordem de Serviço salva com sucesso!", "codigo_os": codigo_os})
     except Exception as e:
         db.session.rollback()
-        return jsonify({"sucesso": False, "mensagem": f"Erro ao criar OS no banco de dados: {str(e)}"}), 500
+        return jsonify({"sucesso": False, "mensagem": f"Erro: {str(e)}"}), 500
 
 
 @app.route('/api/consultar-os', methods=['POST'])
@@ -483,8 +511,7 @@ def consultar_os():
             "valor": os_item.valor, "relatorio": os_item.relatorio or "Em avaliação",
             "garantia": os_item.garantia, "termos": os_item.termos,
             "data_criacao": os_item.data_criacao or "Não registrada",
-            "data_atualizacao": os_item.data_atualizacao or os_item.data_criacao or "Não registrada",
-            "mensagem": f"Aparelho: {os_item.aparelho} | Status: {os_item.status} | Garantia: {os_item.garantia}"
+            "data_atualizacao": os_item.data_atualizacao or os_item.data_criacao or "Não registrada"
         })
     else:
         return jsonify({"sucesso": False, "mensagem": "Os 4 últimos dígitos do telefone não conferem."})
@@ -509,19 +536,14 @@ def editar_os():
     os_item.relatorio = dados.get('relatorio', os_item.relatorio)
     os_item.avarias = ", ".join(avarias_lista) if isinstance(avarias_lista, list) else str(avarias_lista)
 
-    # Atualiza a data/hora sempre que houver modificação (status ou dados)
-    novo_status = dados.get('status', os_item.status)
-    if os_item.status != novo_status or True:
-        os_item.data_atualizacao = datetime.now().strftime("%d/%m/%Y %H:%M")
-
-    os_item.status = novo_status
+    os_item.data_atualizacao = datetime.now().strftime("%d/%m/%Y %H:%M")
+    os_item.status = dados.get('status', os_item.status)
     os_item.valor = dados.get('valor', os_item.valor)
     os_item.garantia = dados.get('garantia', os_item.garantia)
     os_item.termos = dados.get('termos', os_item.termos)
     db.session.commit()
 
     salvar_ou_atualizar_cliente(empresa_id, os_item.cliente, os_item.telefone, os_item.endereco)
-
     return jsonify({"sucesso": True, "mensagem": "Ordem atualizada com sucesso!"})
 
 
@@ -549,11 +571,11 @@ def mudar_senha():
     nova_senha = dados.get('nova_senha')
 
     if not senha_atual or not nova_senha:
-        return jsonify({"sucesso": False, "mensagem": "Preencha todos os campos de senha."})
+        return jsonify({"sucesso": False, "mensagem": "Preencha todos os campos."})
 
     valida, mensagem_erro = validar_senha_forte(nova_senha)
     if not valida:
-        return jsonify({"sucesso": False, "mensagem": f"Nova senha inválida: {mensagem_erro}"})
+        return jsonify({"sucesso": False, "mensagem": f"Senha inválida: {mensagem_erro}"})
 
     tecnico = Tecnico.query.filter_by(empresa_id=empresa_id, senha=senha_atual).first()
     if not tecnico:
@@ -585,8 +607,25 @@ def super_admin():
 def super_painel():
     if not session.get('super_logado'):
         return redirect(url_for('super_admin'))
-    empresas = Empresa.query.all()
-    return render_template('super_painel.html', empresas=empresas)
+
+    empresas_bd = Empresa.query.all()
+    lista_empresas = []
+
+    for emp in empresas_bd:
+        total_os = OrdemServico.query.filter_by(empresa_id=emp.id).count()
+        lista_empresas.append({
+            "id": emp.id,
+            "nome": emp.nome,
+            "slug": emp.slug,
+            "telefone": emp.telefone_whatsapp,
+            "endereco": emp.endereco,
+            "ativo": emp.ativo,
+            "data_criacao": emp.data_criacao or "Não registrada",
+            "data_vencimento": emp.data_vencimento or "Não definida",
+            "total_os": total_os
+        })
+
+    return render_template('super_painel.html', empresas=lista_empresas)
 
 
 @app.route('/super/criar-loja', methods=['POST'])
@@ -599,13 +638,17 @@ def super_criar_loja():
     senha_tec = dados.get('senha_tecnico', '')
     valida, msg = validar_senha_forte(senha_tec)
     if not valida:
-        return jsonify({"sucesso": False, "mensagem": f"Senha do técnico fraca: {msg}"})
+        return jsonify({"sucesso": False, "mensagem": f"Senha fraca: {msg}"})
 
     if Empresa.query.filter_by(slug=slug).first():
         return jsonify({"sucesso": False, "mensagem": "Já existe uma loja com este slug."})
 
     servicos_lista = dados.get('servicos', [])
     servicos_str = ",".join(servicos_lista) if isinstance(servicos_lista, list) else str(servicos_lista)
+
+    hoje = datetime.now()
+    data_criacao_str = hoje.strftime("%d/%m/%Y")
+    data_venc_str = (hoje + timedelta(days=30)).strftime("%d/%m/%Y")
 
     nova = Empresa(
         nome=dados.get('nome'),
@@ -614,7 +657,9 @@ def super_criar_loja():
         endereco=dados.get('endereco'),
         cor_primaria=dados.get('cor_primaria', '#ff3b30'),
         servicos=servicos_str,
-        ativo=True
+        ativo=True,
+        data_criacao=data_criacao_str,
+        data_vencimento=data_venc_str
     )
     db.session.add(nova)
     db.session.commit()
@@ -638,7 +683,7 @@ def super_editar_loja():
     if nova_senha:
         valida, msg = validar_senha_forte(nova_senha)
         if not valida:
-            return jsonify({"sucesso": False, "mensagem": f"Nova senha fraca: {msg}"})
+            return jsonify({"sucesso": False, "mensagem": f"Senha fraca: {msg}"})
 
         tec = Tecnico.query.filter_by(empresa_id=empresa.id).first()
         if tec:
@@ -651,8 +696,12 @@ def super_editar_loja():
     empresa.endereco = dados.get('endereco', empresa.endereco)
     empresa.cor_primaria = dados.get('cor_primaria', empresa.cor_primaria)
     empresa.servicos = ",".join(servicos_lista) if isinstance(servicos_lista, list) else str(servicos_lista)
-    db.session.commit()
 
+    # Se enviou nova data de vencimento pelo painel mestre
+    if dados.get('data_vencimento'):
+        empresa.data_vencimento = dados.get('data_vencimento')
+
+    db.session.commit()
     return jsonify({"sucesso": True, "mensagem": "Loja atualizada com sucesso!"})
 
 
@@ -665,13 +714,13 @@ def super_ativar_loja():
     loja_id = dados.get('id')
 
     if not loja_id:
-        return jsonify({"sucesso": False, "mensagem": "ID da loja não fornecido."}), 400
+        return jsonify({"sucesso": False, "mensagem": "ID não fornecido."}), 400
 
     empresa = Empresa.query.get(int(loja_id))
     if empresa:
         empresa.ativo = not empresa.ativo
         db.session.commit()
-        status_txt = "ativada com sucesso" if empresa.ativo else "suspensa com sucesso"
+        status_txt = "ativada" if empresa.ativo else "suspensa"
         return jsonify({"sucesso": True, "mensagem": f"Loja '{empresa.nome}' foi {status_txt}!"})
 
     return jsonify({"sucesso": False, "mensagem": "Loja não encontrada."}), 404

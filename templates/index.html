@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- FORÇAR A COR DINÂMICA DA LOJA DIRETAMENTE NA PÁGINA -->
+    <!-- FORÇAR A COR DINÂMICA DA LOJA E CORREÇÃO DE RESPONSIVIDADE PARA TELEMÓVEIS -->
     <style>
         :root {
             --cor-primaria: {{ empresa.cor_primaria if empresa and empresa.cor_primaria else '#ff3b30' }};
@@ -18,8 +18,43 @@
         .btn-primary:hover, .btn-consultar:hover { filter: brightness(0.85); }
         .consult-card { border-top: 4px solid var(--cor-primaria) !important; }
         .service-card:hover { border-color: var(--cor-primaria) !important; }
+
+        /* --- AJUSTES COMPLETOS DE RESPONSIVIDADE PARA MOBILE --- */
         @media (max-width: 768px) {
-            .orc-grid { grid-template-columns: 1fr !important; }
+            body {
+                overflow-x: hidden;
+            }
+            .header {
+                flex-direction: column !important;
+                align-items: center !important;
+                padding: 15px !important;
+                gap: 15px;
+                text-align: center;
+            }
+            .nav-links {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px;
+                width: 100%;
+            }
+            .logo-container {
+                justify-content: center;
+            }
+            .orc-grid {
+                grid-template-columns: 1fr !important;
+            }
+            .hero-content h2 {
+                font-size: 24px !important;
+            }
+            div[style*="max-width: 800px"] {
+                margin: 15px !important;
+                padding: 15px !important;
+                width: auto !important;
+            }
+            .consult-section, .services, .contact-section {
+                padding: 15px !important;
+            }
         }
     </style>
 </head>

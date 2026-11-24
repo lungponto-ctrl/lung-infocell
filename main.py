@@ -5,7 +5,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
-app.secret_key = 'chave_secreta_bancadapro_saas'
+app.secret_key = os.environ.get("SECRET_KEY", "chave_secreta_bancadapro_saas")
 
 # Configuração da Base de Dados
 database_url = os.environ.get("DATABASE_URL")
@@ -104,34 +104,50 @@ class OrdemServico(db.Model):
 
 
 # --- MIGRAÇÃO AUTOMÁTICA E INICIALIZAÇÃO ---
-with app.app_context():
+def inicializar_banco():
     db.create_all()
 
-    colunas_migrar = [
-        ("empresas", "ativo", "BOOLEAN DEFAULT 0"),
-        ("empresas", "data_criacao", "VARCHAR(30)"),
-        ("empresas", "data_vencimento", "VARCHAR(30)"),
-        ("tecnicos", "empresa_id", "INTEGER DEFAULT 1"),
-        ("tecnicos", "usuario", "VARCHAR(50) DEFAULT 'admin'"),
-        ("ordens_servico", "empresa_id", "INTEGER DEFAULT 1"),
-        ("ordens_servico", "relatorio", "TEXT"),
-        ("ordens_servico", "avarias", "TEXT"),
-        ("ordens_servico", "status", "VARCHAR(50) DEFAULT 'Em Análise Técnica'"),
-        ("ordens_servico", "valor", "VARCHAR(50) DEFAULT 'A definir'"),
-        ("ordens_servico", "garantia", "VARCHAR(50) DEFAULT '90 Dias'"),
-        ("ordens_servico", "termos", "TEXT"),
-        ("ordens_servico", "data_criacao", "VARCHAR(30)"),
-        ("ordens_servico", "data_atualizacao", "VARCHAR(30)"),
-        ("clientes", "empresa_id", "INTEGER DEFAULT 1"),
-        ("clientes", "endereco", "VARCHAR(200)")
-    ]
+    engine_name = db.engine.dialect.name
+    inspector = db.inspect(db.engine)
 
-    for tabela, coluna, tipo in colunas_migrar:
-        try:
-            db.session.execute(db.text(f"ALTER TABLE {tabela} ADD COLUMN IF NOT EXISTS {coluna} {tipo}"))
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
+    colunas_esperadas = {
+        "empresas": {
+            "ativo": "BOOLEAN DEFAULT 0" if engine_name == "sqlite" else "BOOLEAN DEFAULT FALSE",
+            "data_criacao": "VARCHAR(30)",
+            "data_vencimento": "VARCHAR(30)",
+        },
+        "tecnicos": {
+            "empresa_id": "INTEGER DEFAULT 1",
+            "usuario": "VARCHAR(50) DEFAULT 'admin'",
+        },
+        "ordens_servico": {
+            "empresa_id": "INTEGER DEFAULT 1",
+            "relatorio": "TEXT",
+            "avarias": "TEXT",
+            "status": "VARCHAR(50) DEFAULT 'Em Análise Técnica'",
+            "valor": "VARCHAR(50) DEFAULT 'A definir'",
+            "garantia": "VARCHAR(50) DEFAULT '90 Dias'",
+            "termos": "TEXT",
+            "data_criacao": "VARCHAR(30)",
+            "data_atualizacao": "VARCHAR(30)",
+        },
+        "clientes": {
+            "empresa_id": "INTEGER DEFAULT 1",
+            "endereco": "VARCHAR(200)",
+        },
+    }
+
+    for tabela, colunas in colunas_esperadas.items():
+        if not inspector.has_table(tabela):
+            continue
+        colunas_existentes = {col["name"] for col in inspector.get_columns(tabela)}
+        for coluna, tipo in colunas.items():
+            if coluna not in colunas_existentes:
+                try:
+                    db.session.execute(db.text(f"ALTER TABLE {tabela} ADD COLUMN {coluna} {tipo}"))
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
 
     empresa_padrao = Empresa.query.filter_by(id=1).first()
     hoje_str = datetime.now().strftime("%d/%m/%Y")
@@ -149,26 +165,36 @@ with app.app_context():
             servicos="tela_bateria,conector,computadores,acessorios",
             ativo=True,
             data_criacao=hoje_str,
-            data_vencimento=venc_padrao_str
+            data_vencimento=venc_padrao_str,
         )
         db.session.add(empresa_padrao)
         db.session.commit()
     else:
+        alterou_empresa = False
         if not empresa_padrao.ativo:
             empresa_padrao.ativo = True
+            alterou_empresa = True
         if not empresa_padrao.data_criacao:
             empresa_padrao.data_criacao = hoje_str
+            alterou_empresa = True
         if not empresa_padrao.data_vencimento:
             empresa_padrao.data_vencimento = venc_padrao_str
-        db.session.commit()
+            alterou_empresa = True
+        if alterou_empresa:
+            db.session.commit()
 
     tecnico = Tecnico.query.filter_by(empresa_id=1).first()
     if not tecnico:
         db.session.add(Tecnico(empresa_id=1, usuario="admin", senha="Admin@2026"))
         db.session.commit()
-    else:
-        tecnico.senha = "Admin@2026"
-        db.session.commit()
+
+
+with app.app_context():
+    try:
+        inicializar_banco()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Aviso na inicialização do banco: {e}")
 
 
 def verificar_vencimento_empresa(empresa):
@@ -240,7 +266,7 @@ def cadastro_loja():
             endereco=endereco,
             cor_primaria=cor_primaria,
             servicos=servicos_str,
-            ativo=True,  # Libera imediatamente para teste[cite: 5]
+            ativo=True,
             data_criacao=data_criacao_str,
             data_vencimento=data_venc_str
         )
@@ -256,7 +282,7 @@ def cadastro_loja():
 
         return jsonify({
             "sucesso": True,
-            "mensagem": "Cadastro realizado com sucesso! Seus 7 dias de teste grátis já foram ativados[cite: 5].",
+            "mensagem": "Cadastro realizado com sucesso! Seus 7 dias de teste grátis já foram ativados.",
             "slug": slug
         })
 
